@@ -21,6 +21,8 @@ import random
 
 from sklearn.preprocessing import normalize
 
+import pickle
+
 # this is test function for checking different ways of calculating the histogram
 def calculate_histogram(image, number_of_bins):
     # different ways to calculate histogram
@@ -61,7 +63,7 @@ files_directory = "F:\\Amin\\Desktop\\INRIAPerson\\"
 # load each image in directory
 #png_filenames = glob.glob(files_directory + "Train\\pos\\*.png")
 png_filenames = glob.glob(files_directory + "96X160H96\\Train\\pos\\*.png")
-for filename in png_filenames[:1]:
+for filename in png_filenames[:10]:
     print filename
 
 # version 2
@@ -106,7 +108,7 @@ for filename in png_filenames[:1]:
 # load each image in directory
 #png_filenames = glob.glob(files_directory + "Train\\pos\\*.png")
 png_filenames = glob.glob(files_directory + "\\Train\\neg\\*.png")
-for filename in png_filenames:
+for filename in png_filenames[:10]:
     image_from_file = img_as_ubyte(data.imread(filename, as_grey=True))
     # we have to extract the patch of size 96x160 so negative samples will be the same as positive
     width = 96
@@ -127,25 +129,24 @@ for filename in png_filenames:
 
     train_histogram_negative.append(lbp_histogram)
 
+
 print len(train_histogram_positive)
+with open("positive_histograms", "wb") as f:
+    pickle.dump(train_histogram_positive, f)
+
+
 print len(train_histogram_negative)
+with open("negative_histograms", "wb") as f:
+    pickle.dump(train_histogram_negative, f)
+
+
+#with open("positive_histograms", "rb") as f:
+#    train_histogram_positive = pickle.load(f)
 
 #original_image = img_as_ubyte(data.imread("crop_000001a.png", as_grey=True))
 #original_image = img_as_ubyte(data.imread("F:\\Amin\\Desktop\\INRIAPerson\\Train\\pos\\person_and_bike_209.png", as_grey=True))
 #original_image = img_as_ubyte(rgb2gray(data.camera()))
 #original_image = img_as_ubyte(rgb2gray(data.lena()))
-
-
-
-
-
-
-
-
-
-
-
-
 
 #plt.bar(bins_from_np[:-1], normalized_histogram, width=1)
 #plt.xlim(min(bins_from_np), max(bins_from_np))
