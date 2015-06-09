@@ -63,15 +63,18 @@ def show_histograms(original_image, lbp_image, nr_of_image_bins, nr_of_lbp_bins)
     #raw_input("Press Enter to continue...")
 
 
-def get_histogram_of_file(filename, flag_use_part_of_image=False):
+def get_description_of_image_from_file(filename, flag_use_part_of_image=False):
     print filename
+
+    width = 96
+    height = 160
+    region_size = 16
 
     image_from_file = img_as_ubyte(data.imread(filename, as_grey=True))
 
     if flag_use_part_of_image:
         # we have to extract the patch of size 96x160 so negative samples will be the same as positive
-        width = 96
-        height = 160
+
         # choose left upper corner
         nrows, ncols = image_from_file.shape
         #print nrows, ncols
@@ -82,28 +85,41 @@ def get_histogram_of_file(filename, flag_use_part_of_image=False):
         #print part_of_image
         #viewer = ImageViewer(part_of_image)
         #viewer.show()
-        image_from_file = part_of_image
+        image_for_processing = part_of_image
+    else:
+        image_for_processing = image_from_file
 
-    lbp_image = local_binary_pattern(image_from_file, n_points, radius, METHOD)
+    lbp_image = local_binary_pattern(image_for_processing, n_points, radius, METHOD)
 
     # example function for calculating histograms in different ways
     #calculate_histogram(lbp_image, number_of_lbp_bins)
 
-    lbp_histogram, lbp_bins, lbp_patches = plt.hist(lbp_image.ravel(), bins=number_of_lbp_bins, normed=False)
+    image_description = np.array([])
+    for i in xrange(0, width, region_size):
+        for j in xrange(0, height, region_size):
+            #print "i: ", i, ", j: ", j
+            current_image_region = lbp_image[j:j+region_size, i:i+region_size]
+            #lbp_histogram, lbp_bins, lbp_patches = plt.hist(current_image_region.ravel(), bins=number_of_lbp_bins, normed=False)
+            lbp_histogram, lbp_bins = np.histogram(current_image_region, bins=number_of_lbp_bins)
+            image_description = np.concatenate([image_description, lbp_histogram])
+
+    #lbp_histogram, lbp_bins, lbp_patches = plt.hist(lbp_image.ravel(), bins=number_of_lbp_bins, normed=False)
 
     # function for showing the original and lbp images and theirs histograms
-    show_histograms(image_from_file, lbp_image, number_of_image_bins, number_of_lbp_bins)
+    #show_histograms(image_from_file, lbp_image, number_of_image_bins, number_of_lbp_bins)
 
-    print len(lbp_histogram)
-    print lbp_histogram
+    #print len(lbp_histogram)
+    #print lbp_histogram
 
-    return lbp_histogram
+    return image_description
 
 if __name__ == "__main__":
     # settings for LBP
     radius = 1
     n_points = 8 * radius
-    METHOD = "nri_uniform"#'uniform'#"default"
+    METHOD = "nri_uniform"  # 59 different types
+    # "uniform"  # 10 different types
+    # "default"  # 256 different types
 
     # settings for histograms
     number_of_image_bins = 256
@@ -114,11 +130,11 @@ if __name__ == "__main__":
     plt.ion()
     plt.show()
 
-    number_of_positive_samples = 5
-    number_of_positive_tests = 1
+    number_of_positive_samples = 1000
+    number_of_positive_tests = 200
 
-    number_of_negative_samples = 5
-    number_of_negative_tests = 1
+    number_of_negative_samples = 700
+    number_of_negative_tests = 200
 
     train_histogram_positive = []
     test_histogram_positive = []
@@ -140,12 +156,14 @@ if __name__ == "__main__":
     #for line in lines_from_file[:5]:
         #filename = files_directory + line.replace("/", "\\")
 
-        hist = get_histogram_of_file(filename)
+        hist = get_description_of_image_from_file(filename)
         train_histogram_positive.append(hist)
+        print len(hist)
+        print hist
 
     for filename in png_filenames[number_of_positive_samples:(number_of_positive_samples+number_of_positive_tests)]:
 
-        hist = get_histogram_of_file(filename)
+        hist = get_description_of_image_from_file(filename)
         test_histogram_positive.append(hist)
 
 
@@ -153,14 +171,13 @@ if __name__ == "__main__":
     png_filenames = glob.glob(files_directory + "\\Train\\neg\\*.png")
     for filename in png_filenames[:number_of_negative_samples]:
 
-        hist = get_histogram_of_file(filename, flag_use_part_of_image=True)
+        hist = get_description_of_image_from_file(filename, flag_use_part_of_image=True)
         train_histogram_negative.append(hist)
 
     for filename in png_filenames[number_of_negative_samples:(number_of_negative_samples+number_of_negative_tests)]:
 
-        hist = get_histogram_of_file(filename, flag_use_part_of_image=True)
+        hist = get_description_of_image_from_file(filename, flag_use_part_of_image=True)
         test_histogram_negative.append(hist)
-
 
     print len(train_histogram_positive)
     with open("positive_histograms", "wb") as f:

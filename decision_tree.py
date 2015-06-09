@@ -30,7 +30,7 @@ from sklearn import tree
 # classifier = classifier.fit(training_data, class_labels)
 
 from sklearn.ensemble import RandomForestClassifier
-classifier = RandomForestClassifier(n_estimators=50, max_depth=5)
+classifier = RandomForestClassifier(n_estimators=50, max_depth=4)
 classifier = classifier.fit(training_data, class_labels)
 
 # print "Positive train: "
@@ -76,16 +76,16 @@ for clf in classifier.estimators_[:]:
     #print "Number of thresholds: ", len(clf.tree_.threshold)
     filename = "iris" + str(counter)
 
-    # from sklearn.externals.six import StringIO
-    # with open(filename + ".dot", 'w') as f:
-    #     f = tree.export_graphviz(clf, out_file=f)
-    #
-    # import pydot
-    # dot_data = StringIO()
-    # tree.export_graphviz(clf, out_file=dot_data)
-    # graph = pydot.graph_from_dot_data(dot_data.getvalue())
-    # graph.write_pdf(filename + ".pdf")
-    # import os
-    # os.unlink(filename + ".dot")
+    from sklearn.externals.six import StringIO
+    with open(filename + ".dot", 'w') as f:
+        f = tree.export_graphviz(clf, out_file=f)
+
+    import pydot
+    dot_data = StringIO()
+    tree.export_graphviz(clf, out_file=dot_data)
+    graph = pydot.graph_from_dot_data(dot_data.getvalue())
+    graph.write_pdf(filename + ".pdf")
+    import os
+    os.unlink(filename + ".dot")
 
     counter += 1
