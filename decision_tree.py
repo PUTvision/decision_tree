@@ -8,6 +8,8 @@ from analyse_classifier import get_code
 
 from sklearn.externals.six import StringIO
 
+from Tree import Tree
+
 
 def visualize_tree(clf, filename):
     print "Number of splits: ", len(clf.tree_.value) #array of nodes values
@@ -94,11 +96,44 @@ test_classifier(classifier, test_histogram_negative, 0)
 
 list_of_input_value_names = []
 for i in xrange(0, 3540):
-    list_of_input_value_names.append("X[" + str(i) + "]")
+    #list_of_input_value_names.append("X[" + str(i) + "]")
+    list_of_input_value_names.append(i)
 #get_lineage(classifier.estimators_[0], list_of_input_value_names)
 #get_code(classifier.estimators_[0], list_of_input_value_names)
-get_lineage(classifier, list_of_input_value_names)
-get_code(classifier, list_of_input_value_names)
+#get_lineage(classifier, list_of_input_value_names)
+#get_code(classifier, list_of_input_value_names)
+tree_builder = Tree()
+tree_builder.build(classifier, list_of_input_value_names)
+
+print "Leaves: "
+print len(tree_builder.leaves)
+for leaf in tree_builder.leaves:
+    leaf.show()
+
+print "Splits: "
+print len(tree_builder.splits)
+for split in tree_builder.splits:
+    split.show()
+
+for histogram in test_histogram_positive:
+    scikit_learn_result = classifier.predict(histogram)
+    my_result = tree_builder.predict(histogram)
+
+    print my_result
+
+    my_result_as_class = 0
+
+    if my_result[0][0] > my_result[0][1]:
+        my_result_as_class = 0
+    else:
+        my_result_as_class = 1
+
+    if scikit_learn_result != my_result_as_class:
+        print "Error!"
+
+tree_builder.create_vhdl_code("test.vhdl")
+
+#print tree_builder.predict(test_histogram_positive[0])
 
 #from inspect import getmembers
 #print( getmembers( classifier.estimators_[0].tree_ ) )
