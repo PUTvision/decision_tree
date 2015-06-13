@@ -106,7 +106,25 @@ class Tree:
             if number_of_correct_results == len(leaf.following_split_IDs):
                 choosen_class_index = leaf.class_idx
 
-        return choosen_class_index
+        # TODO - make this fragment universal (to work for more than two classes)
+        if choosen_class_index[0][0] > choosen_class_index[0][1]:
+            chosen_class = 0
+        else:
+            chosen_class = 1
+
+        return chosen_class
+
+    def print_splits(self):
+        print "Splits: "
+        print len(self.splits)
+        for split in self.splits:
+            split.show()
+
+    def print_leaves(self):
+        print "Leaves: "
+        print len(self.leaves)
+        for leaf in self.leaves:
+            leaf.show()
 
     def _insert_text_line_with_indent(self, text_to_insert, current_indent):
         text = ""

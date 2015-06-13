@@ -1,5 +1,3 @@
-from fileinput import filename
-
 __author__ = 'Amin'
 
 import pickle
@@ -41,16 +39,18 @@ def visualize_forest(forest, filename_pattern):
 
 
 def test_classifier(clf, test_data, predicted_result):
-    correct_classifications = 0
-    incorrect_classifications = 0
+    correct_classifications = 0.0
+    incorrect_classifications = 0.0
 
     for histogram in test_data:
         if clf.predict(histogram) == predicted_result:
-            correct_classifications += 1
+            correct_classifications += 1.0
         else:
-            incorrect_classifications += 1
-    print "Correct classifications: ", correct_classifications
-    print "Incorrect classifications: ", incorrect_classifications
+            incorrect_classifications += 1.0
+    #print "Correct classifications: ", correct_classifications
+    #print "Incorrect classifications: ", incorrect_classifications
+
+    return correct_classifications, incorrect_classifications
 
 # prepare training data
 with open("positive_histograms", "rb") as f:
@@ -74,70 +74,71 @@ training_data = train_histogram_positive + train_histogram_negative
 class_labels = class_labels_positive + class_labels_negative
 
 # train and test the tree
+classifier = None
+
+
 from sklearn import tree
-classifier = tree.DecisionTreeClassifier()
-classifier = classifier.fit(training_data, class_labels)
-
 from sklearn.ensemble import RandomForestClassifier
-#classifier = RandomForestClassifier(n_estimators=50, max_depth=4)
-#classifier = classifier.fit(training_data, class_labels)
 
-# print "Positive train: "
-# test_classifier(classifier, train_histogram_positive, 1)
+#for nr_of_trees in xrange(1, 52, 10):
+for nr_of_trees in xrange(1, 2):
+    for depth in xrange(1, 21):
+        classifier = tree.DecisionTreeClassifier(max_depth=depth)
+        classifier = classifier.fit(training_data, class_labels)
 
-print "Positive tests: "
-test_classifier(classifier, test_histogram_positive, 1)
+        #classifier = RandomForestClassifier(n_estimators=nr_of_trees, max_depth=depth)
+        #classifier = classifier.fit(training_data, class_labels)
 
-# print "Negative train: "
-# test_classifier(classifier, train_histogram_negative, 0)
+        correct_classifications = 0.0
+        incorrect_classifications = 0.0
 
-print "Negative tests: "
-test_classifier(classifier, test_histogram_negative, 0)
+        #print "Positive tests: "
+        correct_p, incorrect_p = test_classifier(classifier, test_histogram_positive, 1)
+        correct_classifications += correct_p
+        incorrect_classifications += incorrect_p
 
-list_of_input_value_names = []
-for i in xrange(0, 3540):
-    #list_of_input_value_names.append("X[" + str(i) + "]")
-    list_of_input_value_names.append(i)
+        #print "Negative tests: "
+        correct_n, incorrect_n = test_classifier(classifier, test_histogram_negative, 0)
+        correct_classifications += correct_n
+        incorrect_classifications += incorrect_n
+
+        print "Accuracy (depth: " + '% 02.0f' %(depth) + \
+              ", nr of trees: " + '% 02.0f' %(nr_of_trees) + \
+              "): " + \
+              '% 2.4f' %(correct_classifications / (correct_classifications + incorrect_classifications)) + \
+              ", " + \
+              '% 2.2f' %(correct_p / (correct_p + incorrect_p)) + \
+              ", " + \
+              '% 2.2f' %(correct_n / (correct_n + incorrect_n)) + \
+              ""
+
+# list_of_input_value_names = []
+# for i in xrange(0, 3540):
+#     list_of_input_value_names.append(i)
 #get_lineage(classifier.estimators_[0], list_of_input_value_names)
 #get_code(classifier.estimators_[0], list_of_input_value_names)
+
 #get_lineage(classifier, list_of_input_value_names)
 #get_code(classifier, list_of_input_value_names)
-tree_builder = Tree()
-tree_builder.build(classifier, list_of_input_value_names)
+# tree_builder = Tree()
+# tree_builder.build(classifier, list_of_input_value_names)
 
-print "Leaves: "
-print len(tree_builder.leaves)
-for leaf in tree_builder.leaves:
-    leaf.show()
+#tree_builder.print_leaves()
+#tree_builder.print_splits()
 
-print "Splits: "
-print len(tree_builder.splits)
-for split in tree_builder.splits:
-    split.show()
+# for histogram in test_histogram_positive:
+#     scikit_learn_result = classifier.predict(histogram)
+#     my_result = tree_builder.predict(histogram)
+#
+#     if scikit_learn_result != my_result:
+#         print "Error!"
+#
+# tree_builder.create_vhdl_code("test.vhdl")
 
-for histogram in test_histogram_positive:
-    scikit_learn_result = classifier.predict(histogram)
-    my_result = tree_builder.predict(histogram)
-
-    print my_result
-
-    my_result_as_class = 0
-
-    if my_result[0][0] > my_result[0][1]:
-        my_result_as_class = 0
-    else:
-        my_result_as_class = 1
-
-    if scikit_learn_result != my_result_as_class:
-        print "Error!"
-
-tree_builder.create_vhdl_code("test.vhdl")
-
-#print tree_builder.predict(test_histogram_positive[0])
 
 #from inspect import getmembers
 #print( getmembers( classifier.estimators_[0].tree_ ) )
 
 #visualize_forest(classifier, "tree_visualization\\tree")
-visualize_tree(classifier, "tree_visualization\\tree")
+#visualize_tree(classifier, "tree_visualization\\tree")
 

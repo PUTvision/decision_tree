@@ -63,7 +63,7 @@ def show_histograms(original_image, lbp_image, nr_of_image_bins, nr_of_lbp_bins)
     #raw_input("Press Enter to continue...")
 
 
-def get_description_of_image_from_file(filename, flag_use_part_of_image=False):
+def get_description_of_image_from_file(filename, flag_use_part_of_image=False, show=False):
     print filename
 
     width = 96
@@ -85,11 +85,9 @@ def get_description_of_image_from_file(filename, flag_use_part_of_image=False):
         #print part_of_image
         #viewer = ImageViewer(part_of_image)
         #viewer.show()
-        image_for_processing = part_of_image
-    else:
-        image_for_processing = image_from_file
+        image_from_file = part_of_image
 
-    lbp_image = local_binary_pattern(image_for_processing, n_points, radius, METHOD)
+    lbp_image = local_binary_pattern(image_from_file, n_points, radius, METHOD)
 
     # example function for calculating histograms in different ways
     #calculate_histogram(lbp_image, number_of_lbp_bins)
@@ -99,14 +97,13 @@ def get_description_of_image_from_file(filename, flag_use_part_of_image=False):
         for j in xrange(0, height, region_size):
             #print "i: ", i, ", j: ", j
             current_image_region = lbp_image[j:j+region_size, i:i+region_size]
-            #lbp_histogram, lbp_bins, lbp_patches = plt.hist(current_image_region.ravel(), bins=number_of_lbp_bins, normed=False)
+            # np.histogram function is much faster than plt.hist
             lbp_histogram, lbp_bins = np.histogram(current_image_region, bins=number_of_lbp_bins)
             image_description = np.concatenate([image_description, lbp_histogram])
 
-    #lbp_histogram, lbp_bins, lbp_patches = plt.hist(lbp_image.ravel(), bins=number_of_lbp_bins, normed=False)
-
     # function for showing the original and lbp images and theirs histograms
-    #show_histograms(image_from_file, lbp_image, number_of_image_bins, number_of_lbp_bins)
+    if show == True:
+        show_histograms(image_from_file, lbp_image, number_of_image_bins, number_of_lbp_bins)
 
     #print len(lbp_histogram)
     #print lbp_histogram
@@ -130,11 +127,11 @@ if __name__ == "__main__":
     plt.ion()
     plt.show()
 
-    number_of_positive_samples = 1000
-    number_of_positive_tests = 200
+    number_of_positive_samples = 1200
+    number_of_positive_tests = 400
 
-    number_of_negative_samples = 700
-    number_of_negative_tests = 200
+    number_of_negative_samples = 1200
+    number_of_negative_tests = 400
 
     train_histogram_positive = []
     test_histogram_positive = []
@@ -156,27 +153,26 @@ if __name__ == "__main__":
     #for line in lines_from_file[:5]:
         #filename = files_directory + line.replace("/", "\\")
 
-        hist = get_description_of_image_from_file(filename)
+        hist = get_description_of_image_from_file(filename, show=False)
         train_histogram_positive.append(hist)
-        print len(hist)
-        print hist
 
     for filename in png_filenames[number_of_positive_samples:(number_of_positive_samples+number_of_positive_tests)]:
 
-        hist = get_description_of_image_from_file(filename)
+        hist = get_description_of_image_from_file(filename, show=False)
         test_histogram_positive.append(hist)
 
 
     # prepare negative examples
-    png_filenames = glob.glob(files_directory + "\\Train\\neg\\*.png")
+    png_filenames = glob.glob(files_directory + "\\Train\\neg\\*.png") + glob.glob(files_directory + "\\Train\\neg\\*.jpg")
     for filename in png_filenames[:number_of_negative_samples]:
 
-        hist = get_description_of_image_from_file(filename, flag_use_part_of_image=True)
+        hist = get_description_of_image_from_file(filename, flag_use_part_of_image=True, show=False)
         train_histogram_negative.append(hist)
 
-    for filename in png_filenames[number_of_negative_samples:(number_of_negative_samples+number_of_negative_tests)]:
+    png_filenames = glob.glob(files_directory + "\\Test\\neg\\*.png") + glob.glob(files_directory + "\\Test\\neg\\*.jpg")
+    for filename in png_filenames[:number_of_negative_tests]:
 
-        hist = get_description_of_image_from_file(filename, flag_use_part_of_image=True)
+        hist = get_description_of_image_from_file(filename, flag_use_part_of_image=True, show=False)
         test_histogram_negative.append(hist)
 
     print len(train_histogram_positive)
@@ -194,8 +190,6 @@ if __name__ == "__main__":
     print len(test_histogram_negative)
     with open("test_negative_histograms", "wb") as f:
         pickle.dump(test_histogram_negative, f)
-
-
 
     #original_image = img_as_ubyte(data.imread("crop_000001a.png", as_grey=True))
     #original_image = img_as_ubyte(data.imread("F:\\Amin\\Desktop\\INRIAPerson\\Train\\pos\\person_and_bike_209.png", as_grey=True))
