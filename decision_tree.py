@@ -8,6 +8,8 @@ from sklearn.externals.six import StringIO
 
 from Tree import Tree
 
+import time
+
 
 def visualize_tree(clf, filename):
     print "Number of splits: ", len(clf.tree_.value) #array of nodes values
@@ -82,7 +84,8 @@ from sklearn.ensemble import RandomForestClassifier
 
 #for nr_of_trees in xrange(1, 52, 10):
 for nr_of_trees in xrange(1, 2):
-    for depth in xrange(1, 21):
+    #for depth in xrange(1, 21):
+    for depth in xrange(20, 21):
         classifier = tree.DecisionTreeClassifier(max_depth=depth)
         classifier = classifier.fit(training_data, class_labels)
 
@@ -112,28 +115,43 @@ for nr_of_trees in xrange(1, 2):
               '% 2.2f' %(correct_n / (correct_n + incorrect_n)) + \
               ""
 
-# list_of_input_value_names = []
-# for i in xrange(0, 3540):
-#     list_of_input_value_names.append(i)
+# time measurements
+start = time.clock()
+
+for i in xrange(0, 1000):
+    for histogram in test_histogram_positive[:1000]:
+        classifier.predict(histogram)
+
+end = time.clock()
+time = (end - start)
+
+print str(time) + " per classification in us"
+
+list_of_input_value_names = []
+for i in xrange(0, 3540):
+    list_of_input_value_names.append(i)
 #get_lineage(classifier.estimators_[0], list_of_input_value_names)
 #get_code(classifier.estimators_[0], list_of_input_value_names)
 
 #get_lineage(classifier, list_of_input_value_names)
 #get_code(classifier, list_of_input_value_names)
-# tree_builder = Tree()
-# tree_builder.build(classifier, list_of_input_value_names)
+tree_builder = Tree()
+tree_builder.build(classifier, list_of_input_value_names)
+
+for histogram in test_histogram_positive:
+    scikit_learn_result = classifier.predict(histogram)
+    my_result = tree_builder.predict(histogram)
+
+    if scikit_learn_result != my_result:
+        print "Error!"
+
 
 #tree_builder.print_leaves()
 #tree_builder.print_splits()
-
-# for histogram in test_histogram_positive:
-#     scikit_learn_result = classifier.predict(histogram)
-#     my_result = tree_builder.predict(histogram)
-#
-#     if scikit_learn_result != my_result:
-#         print "Error!"
-#
-# tree_builder.create_vhdl_code("test.vhdl")
+print "Depth: ", tree_builder.find_depth()
+print "Number of splits: ", len(tree_builder.splits)
+print "Number of leaves: ", len(tree_builder.leaves)
+#tree_builder.create_vhdl_code("test3.vhdl")
 
 
 #from inspect import getmembers

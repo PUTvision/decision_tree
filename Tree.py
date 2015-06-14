@@ -126,6 +126,15 @@ class Tree:
         for leaf in self.leaves:
             leaf.show()
 
+    def find_depth(self):
+
+        following_splits_number = []
+
+        for leaf in self.leaves:
+            following_splits_number.append(len(leaf.following_split_IDs))
+
+        return max(following_splits_number)
+
     def _insert_text_line_with_indent(self, text_to_insert, current_indent):
         text = ""
         for i in xrange(0, current_indent):
