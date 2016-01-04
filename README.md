@@ -11,7 +11,7 @@ More information about the project can be found: http://www.vision.put.poznan.pl
 
 ## Description
 
-The code provided allows preparing training and testing data for decision tree based classifier alongside the ability to convert the created decision tree to hardware implementation (VHDL code for FPGA device). Classifier in current implementation allows detecting human silhouette. The INRIA Person Dataset (http://pascal.inrialpes.fr/data/human/) is used as a image source.
+The code provided allows preparing, training and testing data for decision tree based classifier alongside the ability to convert the created decision tree to hardware implementation (VHDL code for FPGA device). Classifier in current implementation allows detecting human silhouette (based on LBP region descriptors). The INRIA Person Dataset (http://pascal.inrialpes.fr/data/human/) is used as a an image source.
 
 ## Languages and tools used
 
@@ -22,9 +22,9 @@ The project is written in Python 2.7.10 and uses following libraries (+ all the 
 * matplotlib - visualization.
 
 ## Modules description
-* Tree.py - classes for storing tree structure and convert it to VHDL code.
-* analyse_classifier.py - functions for extracting decisions from scikit-learn trees (code adapted from some stackoverflow question).
-* prepare_data.py - code for calcualting lbp region descriptors for images and saving them as prepared data for learning and testing the decision tree.
+* Tree.py - classes for storing tree structure and convert it to the VHDL code.
+* analyse_classifier.py - functions for extracting decisions from trees created using scikit-learn modules (code adapted from some stackoverflow question).
+* prepare_data.py - code for calcualting LBP region descriptors for images and saving them as prepared data for learning and testing the decision tree.
 * decision_tree.py - main file that loads prepared data, trains the decision tree and tests it.
 
 ## Running the code
