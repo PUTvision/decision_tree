@@ -66,9 +66,9 @@ def show_histograms(original_image, lbp_image, nr_of_image_bins, nr_of_lbp_bins)
 def get_description_of_image_from_file(filename, flag_use_part_of_image=False, show=False):
     print filename
 
-    width = 96
-    height = 160
-    region_size = 16
+    width = 25#96
+    height = 25#160
+    region_size = 5#16
 
     image_from_file = img_as_ubyte(data.imread(filename, as_grey=True))
 
@@ -78,14 +78,16 @@ def get_description_of_image_from_file(filename, flag_use_part_of_image=False, s
         # choose left upper corner
         nrows, ncols = image_from_file.shape
         #print nrows, ncols
-        x = random.randint(0, nrows-1-height)
-        y = random.randint(0, ncols-1-width)
-        #print x, y
-        part_of_image = image_from_file[x:x+height, y:y+width]
-        #print part_of_image
-        #viewer = ImageViewer(part_of_image)
-        #viewer.show()
-        image_from_file = part_of_image
+
+        if nrows > height and ncols > width:
+            x = random.randint(0, nrows-1-height)
+            y = random.randint(0, ncols-1-width)
+            #print x, y
+            part_of_image = image_from_file[x:x+height, y:y+width]
+            #print part_of_image
+            #viewer = ImageViewer(part_of_image)
+            #viewer.show()
+            image_from_file = part_of_image
 
     lbp_image = local_binary_pattern(image_from_file, n_points, radius, METHOD)
 
@@ -111,6 +113,32 @@ def get_description_of_image_from_file(filename, flag_use_part_of_image=False, s
     return image_description
 
 if __name__ == "__main__":
+
+    #####################################
+    # SET FOLLOWING PARAMETERS
+
+    number_of_positive_samples = 1#1200
+    number_of_positive_tests = 1#400
+
+    number_of_negative_samples = 2#1200
+    number_of_negative_tests = 2#400
+
+    #files_directory = "F:\\Amin\\Desktop\\INRIAPerson\\"
+    files_directory = "F:\\Amin\\Desktop\\sample_database\\"
+
+    #positive_samples_directory = files_directory + "Train\\pos\\"
+    #positive_samples_directory = files_directory + "96X160H96\\Train\\pos\\"
+    positive_samples_directory = files_directory + "25x25\\Train\\positive\\"
+
+    #negative_samples_directory = files_directory + "\\Train\\neg\\"
+    negative_train_samples_directory = files_directory + "25x25\\Train\\negative\\"
+
+    #negative_test_samples_directory = files_directory + "\\Test\\neg\\"
+    negative_test_samples_directory = files_directory + "25x25\\Test\\negative\\"
+
+    # END OF PARAMETERS SETTING
+    #####################################
+
     # settings for LBP
     radius = 1
     n_points = 8 * radius
@@ -127,23 +155,14 @@ if __name__ == "__main__":
     plt.ion()
     plt.show()
 
-    number_of_positive_samples = 1200
-    number_of_positive_tests = 400
-
-    number_of_negative_samples = 1200
-    number_of_negative_tests = 400
-
     train_histogram_positive = []
     test_histogram_positive = []
     train_histogram_negative = []
     test_histogram_negative = []
 
-    files_directory = "F:\\Amin\\Desktop\\INRIAPerson\\"
-
     # version 1
     # load each image in directory
-    #png_filenames = glob.glob(files_directory + "Train\\pos\\*.png")
-    png_filenames = glob.glob(files_directory + "96X160H96\\Train\\pos\\*.png")
+    png_filenames = glob.glob(positive_samples_directory + "*.png")
     for filename in png_filenames[:number_of_positive_samples]:
 
     # version 2
@@ -163,13 +182,13 @@ if __name__ == "__main__":
 
 
     # prepare negative examples
-    png_filenames = glob.glob(files_directory + "\\Train\\neg\\*.png") + glob.glob(files_directory + "\\Train\\neg\\*.jpg")
+    png_filenames = glob.glob(negative_train_samples_directory + "*.png") + glob.glob(negative_train_samples_directory + "*.jpg")
     for filename in png_filenames[:number_of_negative_samples]:
 
         hist = get_description_of_image_from_file(filename, flag_use_part_of_image=True, show=False)
         train_histogram_negative.append(hist)
 
-    png_filenames = glob.glob(files_directory + "\\Test\\neg\\*.png") + glob.glob(files_directory + "\\Test\\neg\\*.jpg")
+    png_filenames = glob.glob(negative_test_samples_directory + "*.png") + glob.glob(negative_test_samples_directory + "*.jpg")
     for filename in png_filenames[:number_of_negative_tests]:
 
         hist = get_description_of_image_from_file(filename, flag_use_part_of_image=True, show=False)
