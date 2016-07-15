@@ -63,12 +63,77 @@ def show_histograms(original_image, lbp_image, nr_of_image_bins, nr_of_lbp_bins)
     #raw_input("Press Enter to continue...")
 
 
+#encoded_lbp_lut = [29] * 256
+encoded_lbp_lut = [0] * 256
+encoded_lbp_lut[0], encoded_lbp_lut[255] = 0, 0
+# encoded_lbp_lut[1], encoded_lbp_lut[254] = 1, 1
+# encoded_lbp_lut[2], encoded_lbp_lut[253] = 2, 2
+# encoded_lbp_lut[3], encoded_lbp_lut[252] = 3, 3
+# encoded_lbp_lut[4], encoded_lbp_lut[251] = 4, 4
+# encoded_lbp_lut[6], encoded_lbp_lut[249] = 5, 5
+# encoded_lbp_lut[7], encoded_lbp_lut[248] = 6, 6
+# encoded_lbp_lut[8], encoded_lbp_lut[247] = 7, 7
+# encoded_lbp_lut[12], encoded_lbp_lut[243] = 8, 8
+# encoded_lbp_lut[14], encoded_lbp_lut[241] = 9, 9
+# encoded_lbp_lut[15], encoded_lbp_lut[240] = 10, 10
+# #encoded_lbp_lut[16], encoded_lbp_lut[239] = 11, 11
+# encoded_lbp_lut[24], encoded_lbp_lut[231] = 12, 12
+# encoded_lbp_lut[28], encoded_lbp_lut[227] = 13, 13
+# encoded_lbp_lut[30], encoded_lbp_lut[225] = 14, 14
+# encoded_lbp_lut[31], encoded_lbp_lut[224] = 15, 15
+# encoded_lbp_lut[32], encoded_lbp_lut[223] = 16, 16
+# encoded_lbp_lut[48], encoded_lbp_lut[207] = 17, 17
+# encoded_lbp_lut[56], encoded_lbp_lut[199] = 18, 18
+# encoded_lbp_lut[60], encoded_lbp_lut[195] = 19, 19
+# encoded_lbp_lut[62], encoded_lbp_lut[193] = 20, 20
+# encoded_lbp_lut[63], encoded_lbp_lut[192] = 21, 21
+# encoded_lbp_lut[64], encoded_lbp_lut[191] = 22, 22
+# encoded_lbp_lut[96], encoded_lbp_lut[159] = 23, 23
+# encoded_lbp_lut[112], encoded_lbp_lut[243] = 24, 24
+# encoded_lbp_lut[120], encoded_lbp_lut[135] = 25, 25
+# encoded_lbp_lut[124], encoded_lbp_lut[131] = 26, 26
+# encoded_lbp_lut[126], encoded_lbp_lut[129] = 27, 27
+# encoded_lbp_lut[127], encoded_lbp_lut[128] = 28, 28
+encoded_lbp_lut[16] = 11
+
+
+def nrulbp_3x3(image):
+
+    output_shape = (image.shape[0], image.shape[1])
+    nrulbp_3x3_image = np.zeros(output_shape, dtype=np.double)
+
+    rows = image.shape[0]
+    cols = image.shape[1]
+
+    for r in xrange(1, rows-1):
+        for c in xrange(1, cols-1):
+            central_pixel = int(image[r, c])
+            raw_lbp_descriptor = 0
+
+            if int(image[r-1, c-1]) - central_pixel > 0:
+                raw_lbp_descriptor += 1 * pow(2, 0)
+            if int(image[r-1, c]) - central_pixel > 0:
+                raw_lbp_descriptor += 1 * pow(2, 1)
+            if int(image[r-1, c+1]) - central_pixel > 0:
+                raw_lbp_descriptor += 1 * pow(2, 2)
+            if int(image[r, c-1]) - central_pixel > 0:
+                raw_lbp_descriptor += 1 * pow(2, 3)
+            if int(image[r, c+1]) - central_pixel > 0:
+                raw_lbp_descriptor += 1 * pow(2, 4)
+            if int(image[r+1, c-1]) - central_pixel > 0:
+                raw_lbp_descriptor += 1 * pow(2, 5)
+            if int(image[r+1, c]) - central_pixel > 0:
+                raw_lbp_descriptor += 1 * pow(2, 6)
+            if int(image[r+1, c+1]) - central_pixel > 0:
+                raw_lbp_descriptor += 1 * pow(2, 7)
+
+            nrulbp_3x3_image[r, c] = encoded_lbp_lut[raw_lbp_descriptor]
+
+    return np.asarray(nrulbp_3x3_image)
+
+
 def get_description_of_image_from_file(filename, flag_use_part_of_image=False, show=False):
     print filename
-
-    width = 25#96
-    height = 25#160
-    region_size = 5#16
 
     image_from_file = img_as_ubyte(data.imread(filename, as_grey=True))
 
@@ -89,7 +154,9 @@ def get_description_of_image_from_file(filename, flag_use_part_of_image=False, s
             #viewer.show()
             image_from_file = part_of_image
 
-    lbp_image = local_binary_pattern(image_from_file, n_points, radius, METHOD)
+    #lbp_image = local_binary_pattern(image_from_file, n_points, radius, METHOD)
+
+    lbp_image = nrulbp_3x3(image_from_file)
 
     # example function for calculating histograms in different ways
     #calculate_histogram(lbp_image, number_of_lbp_bins)
@@ -100,7 +167,7 @@ def get_description_of_image_from_file(filename, flag_use_part_of_image=False, s
             #print "i: ", i, ", j: ", j
             current_image_region = lbp_image[j:j+region_size, i:i+region_size]
             # np.histogram function is much faster than plt.hist
-            lbp_histogram, lbp_bins = np.histogram(current_image_region, bins=number_of_lbp_bins)
+            lbp_histogram, lbp_bins = np.histogram(current_image_region, range=(0, 29), bins=number_of_lbp_bins)
             image_description = np.concatenate([image_description, lbp_histogram])
 
     # function for showing the original and lbp images and theirs histograms
@@ -148,7 +215,12 @@ if __name__ == "__main__":
 
     # settings for histograms
     number_of_image_bins = 256
-    number_of_lbp_bins = 59
+    number_of_lbp_bins = 30#59
+
+    # settings for image region
+    width = 25#96
+    height = 25#160
+    region_size = 5#16
 
     fig, (ax_img, ax_hist) = plt.subplots(nrows=2, ncols=2, figsize=(9, 6))
     plt.gray()
@@ -159,6 +231,11 @@ if __name__ == "__main__":
     test_histogram_positive = []
     train_histogram_negative = []
     test_histogram_negative = []
+
+    image_from_file = img_as_ubyte(data.imread(files_directory + "vhdl_tb.png", as_grey=True))
+    np.savetxt("tb_image_data.txt", image_from_file, fmt="%d", delimiter="\n")
+
+    hist = get_description_of_image_from_file(files_directory + "vhdl_tb.png", show=True)
 
     # version 1
     # load each image in directory
@@ -174,6 +251,8 @@ if __name__ == "__main__":
 
         hist = get_description_of_image_from_file(filename, show=False)
         train_histogram_positive.append(hist)
+
+        np.savetxt("hist_positive.csv", hist, fmt="%d", delimiter=",")
 
     for filename in png_filenames[number_of_positive_samples:(number_of_positive_samples+number_of_positive_tests)]:
 

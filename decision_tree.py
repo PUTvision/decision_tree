@@ -151,7 +151,7 @@ for histogram in test_histogram_positive:
 print "Depth: ", tree_builder.find_depth()
 print "Number of splits: ", len(tree_builder.splits)
 print "Number of leaves: ", len(tree_builder.leaves)
-#tree_builder.create_vhdl_code("test3.vhdl")
+tree_builder.create_vhdl_code("sample_dataset.vhdl")
 
 
 #from inspect import getmembers
