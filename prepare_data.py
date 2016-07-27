@@ -3,47 +3,18 @@ __author__ = 'Amin'
 import numpy as np
 import matplotlib.pyplot as plt
 
-from skimage import exposure
+#import skimage
 from skimage import data
-from skimage.feature import local_binary_pattern
-from skimage import img_as_float
-from skimage.color import rgb2gray
 from skimage import img_as_ubyte
-from skimage.viewer import ImageViewer
-from skimage.io import imshow
-from skimage.io import show
 
 import glob
-
-import time
-
 import random
-
-from sklearn.preprocessing import normalize
-
 import pickle
 
-
-# this is test function for checking different ways of calculating the histogram
-def calculate_histogram(image, number_of_bins):
-    # different ways to calculate histogram
-    histogram_from_np, bins_from_np = np.histogram(image, bins=number_of_bins)
-    histogram_from_scimage, bins_from_scimage = exposure.histogram(image, nbins=number_of_bins)
-    # important - the image data has to be processed by ravel method
-    histogram_from_matplotlib, bins_from_matplotlib, patches_from_matplotlib = plt.hist(image.ravel(), bins=number_of_bins, normed=False)
-
-    # all of these methods return same result
-    print histogram_from_np
-    print histogram_from_scimage
-    print histogram_from_matplotlib
-
-    # how to normalize
-    #normalized_histogram = normalize(img_as_float(histogram_from_np[:, np.newaxis]), axis=0).ravel()
-    # this can also be done as a parameter for matplotlib hist method
-
+import MF_lbp
 
 def show_histograms(original_image, lbp_image, nr_of_image_bins, nr_of_lbp_bins):
-    # showing the results in the window
+    # show the results in the window and wait for the key to be pressed
     image_set = (original_image, lbp_image)
     bins_set = (nr_of_image_bins, nr_of_lbp_bins)
 
@@ -58,78 +29,6 @@ def show_histograms(original_image, lbp_image, nr_of_image_bins, nr_of_lbp_bins)
 
     plt.pause(0.0001)
     plt.waitforbuttonpress()
-
-    #time.sleep(0.05)
-    #raw_input("Press Enter to continue...")
-
-
-#encoded_lbp_lut = [29] * 256
-encoded_lbp_lut = [0] * 256
-encoded_lbp_lut[0], encoded_lbp_lut[255] = 0, 0
-# encoded_lbp_lut[1], encoded_lbp_lut[254] = 1, 1
-# encoded_lbp_lut[2], encoded_lbp_lut[253] = 2, 2
-# encoded_lbp_lut[3], encoded_lbp_lut[252] = 3, 3
-# encoded_lbp_lut[4], encoded_lbp_lut[251] = 4, 4
-# encoded_lbp_lut[6], encoded_lbp_lut[249] = 5, 5
-# encoded_lbp_lut[7], encoded_lbp_lut[248] = 6, 6
-# encoded_lbp_lut[8], encoded_lbp_lut[247] = 7, 7
-# encoded_lbp_lut[12], encoded_lbp_lut[243] = 8, 8
-# encoded_lbp_lut[14], encoded_lbp_lut[241] = 9, 9
-# encoded_lbp_lut[15], encoded_lbp_lut[240] = 10, 10
-# #encoded_lbp_lut[16], encoded_lbp_lut[239] = 11, 11
-# encoded_lbp_lut[24], encoded_lbp_lut[231] = 12, 12
-# encoded_lbp_lut[28], encoded_lbp_lut[227] = 13, 13
-# encoded_lbp_lut[30], encoded_lbp_lut[225] = 14, 14
-# encoded_lbp_lut[31], encoded_lbp_lut[224] = 15, 15
-# encoded_lbp_lut[32], encoded_lbp_lut[223] = 16, 16
-# encoded_lbp_lut[48], encoded_lbp_lut[207] = 17, 17
-# encoded_lbp_lut[56], encoded_lbp_lut[199] = 18, 18
-# encoded_lbp_lut[60], encoded_lbp_lut[195] = 19, 19
-# encoded_lbp_lut[62], encoded_lbp_lut[193] = 20, 20
-# encoded_lbp_lut[63], encoded_lbp_lut[192] = 21, 21
-# encoded_lbp_lut[64], encoded_lbp_lut[191] = 22, 22
-# encoded_lbp_lut[96], encoded_lbp_lut[159] = 23, 23
-# encoded_lbp_lut[112], encoded_lbp_lut[243] = 24, 24
-# encoded_lbp_lut[120], encoded_lbp_lut[135] = 25, 25
-# encoded_lbp_lut[124], encoded_lbp_lut[131] = 26, 26
-# encoded_lbp_lut[126], encoded_lbp_lut[129] = 27, 27
-# encoded_lbp_lut[127], encoded_lbp_lut[128] = 28, 28
-encoded_lbp_lut[16] = 11
-
-
-def nrulbp_3x3(image):
-
-    output_shape = (image.shape[0], image.shape[1])
-    nrulbp_3x3_image = np.zeros(output_shape, dtype=np.double)
-
-    rows = image.shape[0]
-    cols = image.shape[1]
-
-    for r in xrange(1, rows-1):
-        for c in xrange(1, cols-1):
-            central_pixel = int(image[r, c])
-            raw_lbp_descriptor = 0
-
-            if int(image[r-1, c-1]) - central_pixel > 0:
-                raw_lbp_descriptor += 1 * pow(2, 0)
-            if int(image[r-1, c]) - central_pixel > 0:
-                raw_lbp_descriptor += 1 * pow(2, 1)
-            if int(image[r-1, c+1]) - central_pixel > 0:
-                raw_lbp_descriptor += 1 * pow(2, 2)
-            if int(image[r, c-1]) - central_pixel > 0:
-                raw_lbp_descriptor += 1 * pow(2, 3)
-            if int(image[r, c+1]) - central_pixel > 0:
-                raw_lbp_descriptor += 1 * pow(2, 4)
-            if int(image[r+1, c-1]) - central_pixel > 0:
-                raw_lbp_descriptor += 1 * pow(2, 5)
-            if int(image[r+1, c]) - central_pixel > 0:
-                raw_lbp_descriptor += 1 * pow(2, 6)
-            if int(image[r+1, c+1]) - central_pixel > 0:
-                raw_lbp_descriptor += 1 * pow(2, 7)
-
-            nrulbp_3x3_image[r, c] = encoded_lbp_lut[raw_lbp_descriptor]
-
-    return np.asarray(nrulbp_3x3_image)
 
 
 def get_description_of_image_from_file(filename, flag_use_part_of_image=False, show=False):
@@ -156,7 +55,8 @@ def get_description_of_image_from_file(filename, flag_use_part_of_image=False, s
 
     #lbp_image = local_binary_pattern(image_from_file, n_points, radius, METHOD)
 
-    lbp_image = nrulbp_3x3(image_from_file)
+    lbp_calculator = MF_lbp.MF_lbp(use_test_version=True)
+    lbp_image = lbp_calculator.calc_nrulbp_3x3(image_from_file)
 
     # example function for calculating histograms in different ways
     #calculate_histogram(lbp_image, number_of_lbp_bins)
@@ -171,7 +71,7 @@ def get_description_of_image_from_file(filename, flag_use_part_of_image=False, s
             image_description = np.concatenate([image_description, lbp_histogram])
 
     # function for showing the original and lbp images and theirs histograms
-    if show == True:
+    if show:
         show_histograms(image_from_file, lbp_image, number_of_image_bins, number_of_lbp_bins)
 
     #print len(lbp_histogram)
@@ -182,7 +82,7 @@ def get_description_of_image_from_file(filename, flag_use_part_of_image=False, s
 if __name__ == "__main__":
 
     #####################################
-    # SET FOLLOWING PARAMETERS
+    # SET THE FOLLOWING PARAMETERS
 
     number_of_positive_samples = 1#1200
     number_of_positive_tests = 1#400
@@ -232,10 +132,11 @@ if __name__ == "__main__":
     train_histogram_negative = []
     test_histogram_negative = []
 
-    image_from_file = img_as_ubyte(data.imread(files_directory + "vhdl_tb.png", as_grey=True))
-    np.savetxt("tb_image_data.txt", image_from_file, fmt="%d", delimiter="\n")
+    tb_image_filename = "data\\vhdl_tb_3_pixels.png"
+    image_from_file = img_as_ubyte(data.imread(files_directory + tb_image_filename, as_grey=True))
+    np.savetxt("data\\tb_image_data_3_pixels.txt", image_from_file, fmt="%d", delimiter="\n")
 
-    hist = get_description_of_image_from_file(files_directory + "vhdl_tb.png", show=True)
+    hist = get_description_of_image_from_file(files_directory + tb_image_filename, show=True)
 
     # version 1
     # load each image in directory
@@ -252,7 +153,7 @@ if __name__ == "__main__":
         hist = get_description_of_image_from_file(filename, show=False)
         train_histogram_positive.append(hist)
 
-        np.savetxt("hist_positive.csv", hist, fmt="%d", delimiter=",")
+        np.savetxt("data\\hist_positive.csv", hist, fmt="%d", delimiter=",")
 
     for filename in png_filenames[number_of_positive_samples:(number_of_positive_samples+number_of_positive_tests)]:
 
@@ -274,19 +175,19 @@ if __name__ == "__main__":
         test_histogram_negative.append(hist)
 
     print len(train_histogram_positive)
-    with open("positive_histograms", "wb") as f:
+    with open("data\\positive_histograms", "wb") as f:
         pickle.dump(train_histogram_positive, f)
 
     print len(test_histogram_positive)
-    with open("test_positive_histograms", "wb") as f:
+    with open("data\\test_positive_histograms", "wb") as f:
         pickle.dump(test_histogram_positive, f)
 
     print len(train_histogram_negative)
-    with open("negative_histograms", "wb") as f:
+    with open("data\\negative_histograms", "wb") as f:
         pickle.dump(train_histogram_negative, f)
 
     print len(test_histogram_negative)
-    with open("test_negative_histograms", "wb") as f:
+    with open("data\\test_negative_histograms", "wb") as f:
         pickle.dump(test_histogram_negative, f)
 
     #original_image = img_as_ubyte(data.imread("crop_000001a.png", as_grey=True))

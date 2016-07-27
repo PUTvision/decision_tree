@@ -5,7 +5,7 @@ import numpy as np
 
 class MF_lbp:
 
-    def __init__(self, use_test_version = False):
+    def __init__(self, use_test_version=False):
 
         if use_test_version:
             self.encoded_lbp_lut = [0] * 256
