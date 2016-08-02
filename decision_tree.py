@@ -79,15 +79,15 @@ class_labels = class_labels_positive + class_labels_negative
 classifier = None
 
 
-from sklearn import tree
+from sklearn.tree import DecisionTreeClassifier
 from sklearn.ensemble import RandomForestClassifier
 
 #for nr_of_trees in xrange(51, 52, 10):
-for nr_of_trees in xrange(1, 2):
+for nr_of_trees in xrange(2, 3):
     #for depth in xrange(1, 21):
     for depth in xrange(21, 22):
-        #classifier = tree.DecisionTreeClassifier(max_depth=depth)
-        #classifier = classifier.fit(training_data, class_labels)
+        classifier = DecisionTreeClassifier(max_depth=depth)
+        classifier = classifier.fit(training_data, class_labels)
 
         classifier = RandomForestClassifier(n_estimators=nr_of_trees, max_depth=depth)
         classifier = classifier.fit(training_data, class_labels)
@@ -121,7 +121,7 @@ for nr_of_trees in xrange(1, 2):
 # time measurements
 start = time.clock()
 
-for i in xrange(0, 100):
+for i in xrange(0, 10):
     for histogram in test_histogram_positive[:10]:
         classifier.predict(histogram)
 
@@ -135,29 +135,55 @@ list_of_input_value_names = []
 #for i in xrange(0, 3540):
 for i in xrange(0, 6000):
     list_of_input_value_names.append(i)
+
 #get_lineage(classifier.estimators_[0], list_of_input_value_names)
 #get_code(classifier.estimators_[0], list_of_input_value_names)
 
 #get_lineage(classifier, list_of_input_value_names)
 #get_code(classifier, list_of_input_value_names)
-tree_builder = Tree()
-# TODO - at the moment it does not work with ensemble classifier
-tree_builder.build(classifier, list_of_input_value_names)
 
-for histogram in test_histogram_positive:
-    scikit_learn_result = classifier.predict(histogram)
-    my_result = tree_builder.predict(histogram)
+if isinstance(classifier, DecisionTreeClassifier):
+    print "Decision tree classifier!"
+elif isinstance(classifier, RandomForestClassifier):
+    print "Random forest classifier!"
 
-    if scikit_learn_result != my_result:
-        print "Error!"
+    random_forest = []
+
+    for tree in classifier.estimators_:
+        tree_builder = Tree()
+        tree_builder.build(tree, list_of_input_value_names)
+
+        #tree_builder.print_leaves()
+        #tree_builder.print_splits()
+        print "Depth: ", tree_builder.find_depth()
+        print "Number of splits: ", len(tree_builder.splits)
+        print "Number of leaves: ", len(tree_builder.leaves)
+
+        #tree_builder.create_vhdl_code("sample_dataset.vhdl")
+
+        random_forest.append(tree)
+
+    for histogram in test_histogram_positive:
+        scikit_learn_result = classifier.predict(histogram)
+
+        results = [0, 0]
+        for tree in random_forest:
+            tree_result = tree.predict(histogram)
+            results[int(tree_result)] += 1
+
+        if results[0] >= results[1]:
+            my_result = 0
+        else:
+            my_result = 1
+
+        if scikit_learn_result != my_result:
+            print "Error!"
+
+else:
+    print "Unknown type of classifier!"
 
 
-#tree_builder.print_leaves()
-#tree_builder.print_splits()
-print "Depth: ", tree_builder.find_depth()
-print "Number of splits: ", len(tree_builder.splits)
-print "Number of leaves: ", len(tree_builder.leaves)
-tree_builder.create_vhdl_code("sample_dataset.vhdl")
+
 
 
 #from inspect import getmembers

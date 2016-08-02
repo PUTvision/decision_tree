@@ -1,7 +1,5 @@
 __author__ = 'Amin'
 
-import math
-
 
 class Split:
 
@@ -135,6 +133,7 @@ class Tree:
 
         return max(following_splits_number)
 
+    @staticmethod
     def _insert_text_line_with_indent(self, text_to_insert, current_indent):
         text = ""
         for i in xrange(0, current_indent):
