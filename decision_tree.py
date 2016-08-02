@@ -55,21 +55,21 @@ def test_classifier(clf, test_data, predicted_result):
     return correct_classifications, incorrect_classifications
 
 # prepare training data
-with open("positive_histograms", "rb") as f:
+with open("data\\positive_histograms", "rb") as f:
     train_histogram_positive = pickle.load(f)
 
 class_labels_positive = [1] * len(train_histogram_positive)
 
-with open("test_positive_histograms", "rb") as f:
+with open("data\\test_positive_histograms", "rb") as f:
     test_histogram_positive = pickle.load(f)
 
 
-with open("negative_histograms", "rb") as f:
+with open("data\\negative_histograms", "rb") as f:
     train_histogram_negative = pickle.load(f)
 
 class_labels_negative = [0] * len(train_histogram_negative)
 
-with open("test_negative_histograms", "rb") as f:
+with open("data\\test_negative_histograms", "rb") as f:
     test_histogram_negative = pickle.load(f)
 
 training_data = train_histogram_positive + train_histogram_negative
@@ -82,15 +82,15 @@ classifier = None
 from sklearn import tree
 from sklearn.ensemble import RandomForestClassifier
 
-#for nr_of_trees in xrange(1, 52, 10):
+#for nr_of_trees in xrange(51, 52, 10):
 for nr_of_trees in xrange(1, 2):
     #for depth in xrange(1, 21):
-    for depth in xrange(20, 21):
-        classifier = tree.DecisionTreeClassifier(max_depth=depth)
-        classifier = classifier.fit(training_data, class_labels)
-
-        #classifier = RandomForestClassifier(n_estimators=nr_of_trees, max_depth=depth)
+    for depth in xrange(21, 22):
+        #classifier = tree.DecisionTreeClassifier(max_depth=depth)
         #classifier = classifier.fit(training_data, class_labels)
+
+        classifier = RandomForestClassifier(n_estimators=nr_of_trees, max_depth=depth)
+        classifier = classifier.fit(training_data, class_labels)
 
         correct_classifications = 0.0
         incorrect_classifications = 0.0
@@ -107,19 +107,22 @@ for nr_of_trees in xrange(1, 2):
 
         print "Accuracy (depth: " + '% 02.0f' %(depth) + \
               ", nr of trees: " + '% 02.0f' %(nr_of_trees) + \
-              "): " + \
+              "):" + \
+              " overall: " + \
               '% 2.4f' %(correct_classifications / (correct_classifications + incorrect_classifications)) + \
               ", " + \
-              '% 2.2f' %(correct_p / (correct_p + incorrect_p)) + \
+              " positive: " + \
+              '% 2.4f' %(correct_p / (correct_p + incorrect_p)) + \
               ", " + \
-              '% 2.2f' %(correct_n / (correct_n + incorrect_n)) + \
+              " negative: " + \
+              '% 2.4f' %(correct_n / (correct_n + incorrect_n)) + \
               ""
 
 # time measurements
 start = time.clock()
 
-for i in xrange(0, 1000):
-    for histogram in test_histogram_positive[:1000]:
+for i in xrange(0, 100):
+    for histogram in test_histogram_positive[:10]:
         classifier.predict(histogram)
 
 end = time.clock()
@@ -128,7 +131,9 @@ time = (end - start)
 print str(time) + " per classification in us"
 
 list_of_input_value_names = []
-for i in xrange(0, 3540):
+# TODO - this value should be taken automatically
+#for i in xrange(0, 3540):
+for i in xrange(0, 6000):
     list_of_input_value_names.append(i)
 #get_lineage(classifier.estimators_[0], list_of_input_value_names)
 #get_code(classifier.estimators_[0], list_of_input_value_names)
@@ -136,6 +141,7 @@ for i in xrange(0, 3540):
 #get_lineage(classifier, list_of_input_value_names)
 #get_code(classifier, list_of_input_value_names)
 tree_builder = Tree()
+# TODO - at the moment it does not work with ensemble classifier
 tree_builder.build(classifier, list_of_input_value_names)
 
 for histogram in test_histogram_positive:

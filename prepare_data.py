@@ -13,6 +13,7 @@ import pickle
 
 import MF_lbp
 
+
 def show_histograms(original_image, lbp_image, nr_of_image_bins, nr_of_lbp_bins):
     # show the results in the window and wait for the key to be pressed
     image_set = (original_image, lbp_image)
@@ -36,13 +37,13 @@ def get_description_of_image_from_file(filename, flag_use_part_of_image=False, s
 
     image_from_file = img_as_ubyte(data.imread(filename, as_grey=True))
 
+    nrows, ncols = image_from_file.shape
+    #print nrows, ncols
+
     if flag_use_part_of_image:
         # we have to extract the patch of size 96x160 so negative samples will be the same as positive
 
         # choose left upper corner
-        nrows, ncols = image_from_file.shape
-        #print nrows, ncols
-
         if nrows > height and ncols > width:
             x = random.randint(0, nrows-1-height)
             y = random.randint(0, ncols-1-width)
@@ -53,9 +54,34 @@ def get_description_of_image_from_file(filename, flag_use_part_of_image=False, s
             #viewer.show()
             image_from_file = part_of_image
 
+    if nrows < height or ncols < width:
+        # if the loaded image is smaller than the defined region duplicate pixels from the border
+        vertical_difference = height - nrows
+        if vertical_difference % 2 == 1:
+            number_of_pixels_to_add_at_the_top = vertical_difference // 2 + 1
+            number_of_pixels_to_add_at_the_bottom = vertical_difference // 2
+        else:
+            number_of_pixels_to_add_at_the_top = vertical_difference // 2
+            number_of_pixels_to_add_at_the_bottom = vertical_difference // 2
+
+        horizonatl_difference = width - ncols
+        if vertical_difference % 2 == 1:
+            number_of_pixels_to_add_on_the_left = horizonatl_difference // 2 + 1
+            number_of_pixels_to_add_on_the_right = horizonatl_difference // 2
+        else:
+            number_of_pixels_to_add_on_the_left = horizonatl_difference // 2
+            number_of_pixels_to_add_on_the_right = horizonatl_difference // 2
+
+        part_of_image = np.lib.pad(image_from_file, (
+            (number_of_pixels_to_add_at_the_top, number_of_pixels_to_add_at_the_bottom),
+            (number_of_pixels_to_add_on_the_left, number_of_pixels_to_add_on_the_right)
+        ), 'edge')
+
+        image_from_file = part_of_image
+
     #lbp_image = local_binary_pattern(image_from_file, n_points, radius, METHOD)
 
-    lbp_calculator = MF_lbp.MF_lbp(use_test_version=True)
+    lbp_calculator = MF_lbp.MF_lbp(use_test_version=False)
     lbp_image = lbp_calculator.calc_nrulbp_3x3(image_from_file)
 
     # example function for calculating histograms in different ways
@@ -79,29 +105,59 @@ def get_description_of_image_from_file(filename, flag_use_part_of_image=False, s
 
     return image_description
 
+
+def generate_image_file_for_vhdl_testbench(tb_image_filename, tb_data_filename):
+    image_from_file = img_as_ubyte(data.imread(files_directory + tb_image_filename, as_grey=True))
+    np.savetxt("data\\" + tb_data_filename, image_from_file, fmt="%d", delimiter="\n")
+
+    hist = get_description_of_image_from_file(files_directory + tb_image_filename, show=True)
+
+    np.savetxt("data\\hist_positive.csv", hist, fmt="%d", delimiter=",")
+
 if __name__ == "__main__":
 
     #####################################
     # SET THE FOLLOWING PARAMETERS
 
-    number_of_positive_samples = 1#1200
-    number_of_positive_tests = 1#400
+    # INRIA DATABASE FOR RUC 2015, CORES 2015
+    # width = 96
+    # height = 160
+    # region_size = 16
+    # number_of_positive_samples = 1200
+    # number_of_positive_tests = 400
+    # number_of_negative_samples = 1200
+    # number_of_negative_tests = 400
+    # files_directory = "F:\\Amin\\Desktop\\INRIAPerson\\"
+    # positive_samples_directory = files_directory + "Train\\pos\\"
+    # positive_samples_directory = files_directory + "96X160H96\\Train\\pos\\"
+    # negative_train_samples_directory = files_directory + "\\Train\\neg\\"
+    # negative_test_samples_directory = files_directory + "\\Test\\neg\\"
 
-    number_of_negative_samples = 2#1200
-    number_of_negative_tests = 2#400
+    # # TEST SETTINGS
+    # width = 25
+    # height = 25
+    # region_size = 5
+    # number_of_positive_samples = 1
+    # number_of_positive_tests = 1
+    # number_of_negative_samples = 2
+    # number_of_negative_tests = 2
+    # files_directory = "F:\\Amin\\Desktop\\sample_database\\"
+    # positive_samples_directory = files_directory + "25x25\\Train\\positive\\"
+    # negative_train_samples_directory = files_directory + "25x25\\Train\\negative\\"
+    # negative_test_samples_directory = files_directory + "25x25\\Test\\negative\\"
 
-    #files_directory = "F:\\Amin\\Desktop\\INRIAPerson\\"
-    files_directory = "F:\\Amin\\Desktop\\sample_database\\"
-
-    #positive_samples_directory = files_directory + "Train\\pos\\"
-    #positive_samples_directory = files_directory + "96X160H96\\Train\\pos\\"
-    positive_samples_directory = files_directory + "25x25\\Train\\positive\\"
-
-    #negative_samples_directory = files_directory + "\\Train\\neg\\"
-    negative_train_samples_directory = files_directory + "25x25\\Train\\negative\\"
-
-    #negative_test_samples_directory = files_directory + "\\Test\\neg\\"
-    negative_test_samples_directory = files_directory + "25x25\\Test\\negative\\"
+    # CVC Virtual Pedestrian
+    width = 50
+    height = 100
+    region_size = 5
+    number_of_positive_samples = 500
+    number_of_positive_tests = 500
+    number_of_negative_samples = 1000
+    number_of_negative_tests = 1000
+    files_directory = "F:\\Amin\\Desktop\\CVC-Virtual-Pedestrian\\train\\"
+    positive_samples_directory = files_directory + "pedestrians\\"
+    negative_train_samples_directory = files_directory + "background-frames\\"
+    negative_test_samples_directory = files_directory + "background-frames\\"
 
     # END OF PARAMETERS SETTING
     #####################################
@@ -115,12 +171,9 @@ if __name__ == "__main__":
 
     # settings for histograms
     number_of_image_bins = 256
+    # this depends on which LBP method is used - the one from scikit-image generate 59 classes, \
+    # while our own implementation generate 30
     number_of_lbp_bins = 30#59
-
-    # settings for image region
-    width = 25#96
-    height = 25#160
-    region_size = 5#16
 
     fig, (ax_img, ax_hist) = plt.subplots(nrows=2, ncols=2, figsize=(9, 6))
     plt.gray()
@@ -132,11 +185,7 @@ if __name__ == "__main__":
     train_histogram_negative = []
     test_histogram_negative = []
 
-    tb_image_filename = "data\\vhdl_tb_3_pixels.png"
-    image_from_file = img_as_ubyte(data.imread(files_directory + tb_image_filename, as_grey=True))
-    np.savetxt("data\\tb_image_data_3_pixels.txt", image_from_file, fmt="%d", delimiter="\n")
-
-    hist = get_description_of_image_from_file(files_directory + tb_image_filename, show=True)
+    #generate_image_file_for_vhdl_testbench("data\\vhdl_tb_3_pixels.png", "tb_image_data_3_pixels.txt")
 
     # version 1
     # load each image in directory
@@ -153,13 +202,10 @@ if __name__ == "__main__":
         hist = get_description_of_image_from_file(filename, show=False)
         train_histogram_positive.append(hist)
 
-        np.savetxt("data\\hist_positive.csv", hist, fmt="%d", delimiter=",")
-
     for filename in png_filenames[number_of_positive_samples:(number_of_positive_samples+number_of_positive_tests)]:
 
         hist = get_description_of_image_from_file(filename, show=False)
         test_histogram_positive.append(hist)
-
 
     # prepare negative examples
     png_filenames = glob.glob(negative_train_samples_directory + "*.png") + glob.glob(negative_train_samples_directory + "*.jpg")
