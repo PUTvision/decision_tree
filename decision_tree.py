@@ -7,14 +7,13 @@ from analyse_classifier import get_code
 from sklearn.externals.six import StringIO
 
 from Tree import Tree
-
-import time
+from Tree import RandomForest
 
 
 def visualize_tree(clf, filename):
     print "Number of splits: ", len(clf.tree_.value) #array of nodes values
-    #print "Number of features: ", len(tree.tree_.feature)
-    #print "Number of thresholds: ", len(tree.tree_.threshold)
+    print "Number of features: ", len(clf.tree.tree_.feature)
+    print "Number of thresholds: ", len(clf.tree.tree_.threshold)
 
     # save as *.dot file
     # with open(filename + ".dot", 'w') as f:
@@ -26,7 +25,7 @@ def visualize_tree(clf, filename):
 
     import pydot
     dot_data = StringIO()
-    tree.export_graphviz(clf, out_file=dot_data)
+    clf.tree.export_graphviz(clf, out_file=dot_data)
     graph = pydot.graph_from_dot_data(dot_data.getvalue())
     graph.write_pdf(filename + ".pdf")
 
@@ -40,12 +39,39 @@ def visualize_forest(forest, filename_pattern):
         counter += 1
 
 
+def check_and_print_classifier_accuracy(clf, test_data_positive, test_data_negative):
+    correct_classifications = 0.0
+    incorrect_classifications = 0.0
+
+    #print "Positive tests: "
+    correct_p, incorrect_p = test_classifier(clf, test_data_positive, 1)
+    correct_classifications += correct_p
+    incorrect_classifications += incorrect_p
+
+    #print "Negative tests: "
+    correct_n, incorrect_n = test_classifier(clf, test_data_negative, 0)
+    correct_classifications += correct_n
+    incorrect_classifications += incorrect_n
+
+    print "Accuracy: " + \
+          " overall: " + \
+          '% 2.4f' %(correct_classifications / (correct_classifications + incorrect_classifications)) + \
+          ", " + \
+          " positive: " + \
+          '% 2.4f' %(correct_p / (correct_p + incorrect_p)) + \
+          ", " + \
+          " negative: " + \
+          '% 2.4f' %(correct_n / (correct_n + incorrect_n)) + \
+          ""
+    pass
+
+
 def test_classifier(clf, test_data, predicted_result):
     correct_classifications = 0.0
     incorrect_classifications = 0.0
 
-    for histogram in test_data:
-        if clf.predict(histogram) == predicted_result:
+    for data in test_data:
+        if clf.predict(data) == predicted_result:
             correct_classifications += 1.0
         else:
             incorrect_classifications += 1.0
@@ -54,141 +80,116 @@ def test_classifier(clf, test_data, predicted_result):
 
     return correct_classifications, incorrect_classifications
 
-# prepare training data
-with open("data\\positive_histograms", "rb") as f:
-    train_histogram_positive = pickle.load(f)
 
-class_labels_positive = [1] * len(train_histogram_positive)
+def test_classification_performance(clf, test_data):
+    import time
 
-with open("data\\test_positive_histograms", "rb") as f:
-    test_histogram_positive = pickle.load(f)
+    number_of_iterations = 1000
+    number_of_data_to_test = 1000
 
+    if number_of_data_to_test < len(test_data):
+        start = time.clock()
 
-with open("data\\negative_histograms", "rb") as f:
-    train_histogram_negative = pickle.load(f)
+        for i in xrange(0, number_of_iterations):
+            for data in test_data[:number_of_data_to_test]:
+                clf.predict(data)
 
-class_labels_negative = [0] * len(train_histogram_negative)
+        end = time.clock()
+        elapsed_time = (end - start)
 
-with open("data\\test_negative_histograms", "rb") as f:
-    test_histogram_negative = pickle.load(f)
+        print "It takes " + str(elapsed_time / number_of_iterations) + "us to classify " + \
+              str(number_of_data_to_test) + " data."
+    else:
+        print "There is not enough data provided to evaluate the performance. It is required to provide at least " + \
+              str(number_of_data_to_test) + "values."
 
-training_data = train_histogram_positive + train_histogram_negative
-class_labels = class_labels_positive + class_labels_negative
+if __name__ == "__main__":
 
-# train and test the tree
-classifier = None
+    # prepare the training data
+    with open("data\\positive_histograms", "rb") as f:
+        train_histogram_positive = pickle.load(f)
 
+    class_labels_positive = [1] * len(train_histogram_positive)
 
-from sklearn.tree import DecisionTreeClassifier
-from sklearn.ensemble import RandomForestClassifier
+    with open("data\\test_positive_histograms", "rb") as f:
+        test_histogram_positive = pickle.load(f)
 
-#for nr_of_trees in xrange(51, 52, 10):
-for nr_of_trees in xrange(2, 3):
-    #for depth in xrange(1, 21):
-    for depth in xrange(21, 22):
-        classifier = DecisionTreeClassifier(max_depth=depth)
-        classifier = classifier.fit(training_data, class_labels)
+    with open("data\\negative_histograms", "rb") as f:
+        train_histogram_negative = pickle.load(f)
 
-        classifier = RandomForestClassifier(n_estimators=nr_of_trees, max_depth=depth)
-        classifier = classifier.fit(training_data, class_labels)
+    class_labels_negative = [0] * len(train_histogram_negative)
 
-        correct_classifications = 0.0
-        incorrect_classifications = 0.0
+    with open("data\\test_negative_histograms", "rb") as f:
+        test_histogram_negative = pickle.load(f)
 
-        #print "Positive tests: "
-        correct_p, incorrect_p = test_classifier(classifier, test_histogram_positive, 1)
-        correct_classifications += correct_p
-        incorrect_classifications += incorrect_p
+    training_data = train_histogram_positive + train_histogram_negative
+    class_labels = class_labels_positive + class_labels_negative
 
-        #print "Negative tests: "
-        correct_n, incorrect_n = test_classifier(classifier, test_histogram_negative, 0)
-        correct_classifications += correct_n
-        incorrect_classifications += incorrect_n
+    # train and test the tree
+    classifier = None
 
-        print "Accuracy (depth: " + '% 02.0f' %(depth) + \
-              ", nr of trees: " + '% 02.0f' %(nr_of_trees) + \
-              "):" + \
-              " overall: " + \
-              '% 2.4f' %(correct_classifications / (correct_classifications + incorrect_classifications)) + \
-              ", " + \
-              " positive: " + \
-              '% 2.4f' %(correct_p / (correct_p + incorrect_p)) + \
-              ", " + \
-              " negative: " + \
-              '% 2.4f' %(correct_n / (correct_n + incorrect_n)) + \
-              ""
+    from sklearn.tree import DecisionTreeClassifier
+    from sklearn.ensemble import RandomForestClassifier
 
-# time measurements
-start = time.clock()
+    #for nr_of_trees in xrange(51, 52, 10):
+    for nr_of_trees in xrange(2, 3):
+        #for depth in xrange(1, 21):
+        for depth in xrange(21, 22):
 
-for i in xrange(0, 10):
-    for histogram in test_histogram_positive[:10]:
-        classifier.predict(histogram)
+            print "Parameters: depth: " + '% 02.0f' %depth + \
+                  ", nr of trees: " + '% 02.0f' %nr_of_trees + \
+                  "): "
 
-end = time.clock()
-time = (end - start)
+            #classifier = DecisionTreeClassifier(max_depth=depth)
+            #classifier = classifier.fit(training_data, class_labels)
 
-print str(time) + " per classification in us"
+            classifier = RandomForestClassifier(n_estimators=nr_of_trees, max_depth=depth)
+            classifier = classifier.fit(training_data, class_labels)
 
-list_of_input_value_names = []
-# TODO - this value should be taken automatically
-#for i in xrange(0, 3540):
-for i in xrange(0, 6000):
-    list_of_input_value_names.append(i)
+            check_and_print_classifier_accuracy(classifier, test_histogram_positive, test_histogram_negative)
 
-#get_lineage(classifier.estimators_[0], list_of_input_value_names)
-#get_code(classifier.estimators_[0], list_of_input_value_names)
+    # Use this to test the performance
+    #test_classification_performance(classifier, test_histogram_positive)
 
-#get_lineage(classifier, list_of_input_value_names)
-#get_code(classifier, list_of_input_value_names)
+    list_of_input_value_names = []
+    # TODO - this value should be taken automatically
+    #for i in xrange(0, 3540):
+    for i in xrange(0, 6000):
+        list_of_input_value_names.append(i)
 
-if isinstance(classifier, DecisionTreeClassifier):
-    print "Decision tree classifier!"
-elif isinstance(classifier, RandomForestClassifier):
-    print "Random forest classifier!"
+    if isinstance(classifier, DecisionTreeClassifier):
+        print "Decision tree classifier!"
+        my_classifier = Tree()
 
-    random_forest = []
+    elif isinstance(classifier, RandomForestClassifier):
+        print "Random forest classifier!"
+        my_classifier = RandomForest()
 
-    for tree in classifier.estimators_:
-        tree_builder = Tree()
-        tree_builder.build(tree, list_of_input_value_names)
+    else:
+        print "Unknown type of classifier!"
 
-        #tree_builder.print_leaves()
-        #tree_builder.print_splits()
-        print "Depth: ", tree_builder.find_depth()
-        print "Number of splits: ", len(tree_builder.splits)
-        print "Number of leaves: ", len(tree_builder.leaves)
+    my_classifier.build(classifier, list_of_input_value_names)
 
-        #tree_builder.create_vhdl_code("sample_dataset.vhdl")
-
-        random_forest.append(tree)
+    my_classifier.print_parameters()
 
     for histogram in test_histogram_positive:
         scikit_learn_result = classifier.predict(histogram)
-
-        results = [0, 0]
-        for tree in random_forest:
-            tree_result = tree.predict(histogram)
-            results[int(tree_result)] += 1
-
-        if results[0] >= results[1]:
-            my_result = 0
-        else:
-            my_result = 1
+        my_result = my_classifier.predict(histogram)
 
         if scikit_learn_result != my_result:
             print "Error!"
 
-else:
-    print "Unknown type of classifier!"
+    for histogram in test_histogram_negative:
+        scikit_learn_result = classifier.predict(histogram)
+        my_result = my_classifier.predict(histogram)
 
+        if scikit_learn_result != my_result:
+            print "Error!"
 
+    #my_classifier.create_vhdl_code("tree.vhdl")
 
+    #from inspect import getmembers
+    #print( getmembers( classifier.estimators_[0].tree_ ) )
 
-
-#from inspect import getmembers
-#print( getmembers( classifier.estimators_[0].tree_ ) )
-
-#visualize_forest(classifier, "tree_visualization\\tree")
-#visualize_tree(classifier, "tree_visualization\\tree")
-
+    #visualize_forest(classifier, "tree_visualization\\tree")
+    #visualize_tree(classifier, "tree_visualization\\tree")

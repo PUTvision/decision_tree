@@ -45,6 +45,40 @@ class Leaf:
         print compare_values
 
 
+class RandomForest:
+
+    def __init__(self):
+        self.random_forest = []
+
+    def build(self, random_forest, feature_names):
+        for tree in random_forest.estimators_:
+            tree_builder = Tree()
+            tree_builder.build(tree, feature_names)
+
+            self.random_forest.append(tree_builder)
+
+    def predict(self, input_data):
+        # TODO - make this fragment universal (to work for more than two classes)
+        results = [0, 0]
+        for tree in self.random_forest:
+            tree_result = tree.predict(input_data)
+            results[int(tree_result)] += 1
+
+        if results[0] >= results[1]:
+            chosen_class = 0
+        else:
+            chosen_class = 1
+
+        return chosen_class
+
+    def print_parameters(self):
+        for tree in self.random_forest:
+            tree.print_parameters()
+
+    def create_vhdl_code(self, filename):
+        pass
+
+
 class Tree:
 
     def __init__(self):
@@ -111,6 +145,13 @@ class Tree:
             chosen_class = 1
 
         return chosen_class
+
+    def print_parameters(self):
+        #self.print_leaves()
+        #self.print_splits()
+        print "Depth: ", self.find_depth()
+        print "Number of splits: ", len(self.splits)
+        print "Number of leaves: ", len(self.leaves)
 
     def print_splits(self):
         print "Splits: "
