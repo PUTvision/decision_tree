@@ -57,3 +57,12 @@ def get_lineage(tree, feature_names):
     for child in idx:
         for node in recurse(left, right, child):
             print node
+
+if __name__ == "__main__":
+    # sample usage for random forest classifier to show first tree
+    #get_lineage(classifier.estimators_[0], list_of_input_value_names)
+    #get_code(classifier.estimators_[0], list_of_input_value_names)
+
+    #get_lineage(classifier, list_of_input_value_names)
+    #get_code(classifier, list_of_input_value_names)
+    pass

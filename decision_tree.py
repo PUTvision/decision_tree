@@ -140,11 +140,11 @@ if __name__ == "__main__":
                   ", nr of trees: " + '% 02.0f' %nr_of_trees + \
                   "): "
 
-            #classifier = DecisionTreeClassifier(max_depth=depth)
-            #classifier = classifier.fit(training_data, class_labels)
-
-            classifier = RandomForestClassifier(n_estimators=nr_of_trees, max_depth=depth)
+            classifier = DecisionTreeClassifier(max_depth=depth)
             classifier = classifier.fit(training_data, class_labels)
+
+            #classifier = RandomForestClassifier(n_estimators=nr_of_trees, max_depth=depth)
+            #classifier = classifier.fit(training_data, class_labels)
 
             check_and_print_classifier_accuracy(classifier, test_histogram_positive, test_histogram_negative)
 
@@ -186,7 +186,8 @@ if __name__ == "__main__":
         if scikit_learn_result != my_result:
             print "Error!"
 
-    #my_classifier.create_vhdl_code("tree.vhdl")
+    #my_classifier.create_vhdl_code_old("tree.vhdl")
+    my_classifier.create_vhdl_file()
 
     #from inspect import getmembers
     #print( getmembers( classifier.estimators_[0].tree_ ) )
