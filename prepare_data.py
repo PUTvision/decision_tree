@@ -3,9 +3,7 @@ __author__ = 'Amin'
 import numpy as np
 import matplotlib.pyplot as plt
 
-#import skimage
-from skimage import data
-from skimage import img_as_ubyte
+import skimage
 
 import glob
 import random
@@ -33,9 +31,9 @@ def show_histograms(original_image, lbp_image, nr_of_image_bins, nr_of_lbp_bins)
 
 
 def get_description_of_image_from_file(filename, flag_use_part_of_image=False, show=False):
-    print filename
+    print(filename)
 
-    image_from_file = img_as_ubyte(data.imread(filename, as_grey=True))
+    image_from_file = skimage.img_as_ubyte(skimage.data.imread(filename, as_grey=True))
 
     nrows, ncols = image_from_file.shape
     #print nrows, ncols
@@ -88,8 +86,8 @@ def get_description_of_image_from_file(filename, flag_use_part_of_image=False, s
     #calculate_histogram(lbp_image, number_of_lbp_bins)
 
     image_description = np.array([])
-    for i in xrange(0, width, region_size):
-        for j in xrange(0, height, region_size):
+    for i in range(0, width, region_size):
+        for j in range(0, height, region_size):
             #print "i: ", i, ", j: ", j
             current_image_region = lbp_image[j:j+region_size, i:i+region_size]
             # np.histogram function is much faster than plt.hist
@@ -107,7 +105,7 @@ def get_description_of_image_from_file(filename, flag_use_part_of_image=False, s
 
 
 def generate_image_file_for_vhdl_testbench(tb_image_filename, tb_data_filename):
-    image_from_file = img_as_ubyte(data.imread(files_directory + tb_image_filename, as_grey=True))
+    image_from_file = skimage.img_as_ubyte(skimage.data.imread(files_directory + tb_image_filename, as_grey=True))
     np.savetxt("data\\" + tb_data_filename, image_from_file, fmt="%d", delimiter="\n")
 
     hist = get_description_of_image_from_file(files_directory + tb_image_filename, show=True)
@@ -128,10 +126,22 @@ if __name__ == "__main__":
     # number_of_negative_samples = 1200
     # number_of_negative_tests = 400
     # files_directory = "F:\\Amin\\Desktop\\INRIAPerson\\"
-    # positive_samples_directory = files_directory + "Train\\pos\\"
     # positive_samples_directory = files_directory + "96X160H96\\Train\\pos\\"
     # negative_train_samples_directory = files_directory + "\\Train\\neg\\"
     # negative_test_samples_directory = files_directory + "\\Test\\neg\\"
+
+    # INRIA DATABASE FOR HOG (64x128)
+    width = 64
+    height = 128
+    region_size = 16
+    number_of_positive_samples = 100
+    number_of_positive_tests = 100
+    number_of_negative_samples = 100
+    number_of_negative_tests = 100
+    files_directory = "F:\\Amin\\Desktop\\INRIAPerson\\"
+    positive_samples_directory = files_directory + "70X134H96\\Test\\pos\\"
+    negative_train_samples_directory = files_directory + "\\Train\\neg\\"
+    negative_test_samples_directory = files_directory + "\\Test\\neg\\"
 
     # # TEST SETTINGS
     # width = 25
@@ -147,17 +157,17 @@ if __name__ == "__main__":
     # negative_test_samples_directory = files_directory + "25x25\\Test\\negative\\"
 
     # CVC Virtual Pedestrian
-    width = 50
-    height = 100
-    region_size = 5
-    number_of_positive_samples = 500
-    number_of_positive_tests = 500
-    number_of_negative_samples = 1000
-    number_of_negative_tests = 1000
-    files_directory = "F:\\Amin\\Desktop\\CVC-Virtual-Pedestrian\\train\\"
-    positive_samples_directory = files_directory + "pedestrians\\"
-    negative_train_samples_directory = files_directory + "background-frames\\"
-    negative_test_samples_directory = files_directory + "background-frames\\"
+    # width = 50
+    # height = 100
+    # region_size = 5
+    # number_of_positive_samples = 500
+    # number_of_positive_tests = 500
+    # number_of_negative_samples = 1000
+    # number_of_negative_tests = 1000
+    # files_directory = "F:\\Amin\\Desktop\\CVC-Virtual-Pedestrian\\train\\"
+    # positive_samples_directory = files_directory + "pedestrians\\"
+    # negative_train_samples_directory = files_directory + "background-frames\\"
+    # negative_test_samples_directory = files_directory + "background-frames\\"
 
     # END OF PARAMETERS SETTING
     #####################################
@@ -220,19 +230,19 @@ if __name__ == "__main__":
         hist = get_description_of_image_from_file(filename, flag_use_part_of_image=True, show=False)
         test_histogram_negative.append(hist)
 
-    print len(train_histogram_positive)
+    print(len(train_histogram_positive))
     with open("data\\positive_histograms", "wb") as f:
         pickle.dump(train_histogram_positive, f)
 
-    print len(test_histogram_positive)
+    print(len(test_histogram_positive))
     with open("data\\test_positive_histograms", "wb") as f:
         pickle.dump(test_histogram_positive, f)
 
-    print len(train_histogram_negative)
+    print(len(train_histogram_negative))
     with open("data\\negative_histograms", "wb") as f:
         pickle.dump(train_histogram_negative, f)
 
-    print len(test_histogram_negative)
+    print(len(test_histogram_negative))
     with open("data\\test_negative_histograms", "wb") as f:
         pickle.dump(test_histogram_negative, f)
 

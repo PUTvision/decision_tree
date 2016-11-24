@@ -50,8 +50,8 @@ class MF_lbp:
         rows = image.shape[0]
         cols = image.shape[1]
     
-        for r in xrange(1, rows-1):
-            for c in xrange(1, cols-1):
+        for r in range(1, rows-1):
+            for c in range(1, cols-1):
                 central_pixel = int(image[r, c])
                 raw_lbp_descriptor = 0
     

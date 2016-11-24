@@ -238,18 +238,17 @@ class GradientDir:
         # each cell has 9 values, this function should compute the sum of all corresponding values
         return final_descriptor
 
+if __name__ == "__main__":
 
-gradients = GradientDir()
+    gradients = GradientDir()
+    abs_gradient_x, abs_gradient_y, sign_flag = gradients._shuffle_signs(-255, -255)
+    bins_0, bins_1 = gradients._compute_dir(abs_gradient_x, abs_gradient_y, sign_flag)
+    gradient_dir = gradients._combine_dir(bins_0, bins_1)
+    print("gradient_dir for -255, -255: " + str(hex(gradient_dir)))
 
-abs_gradient_x, abs_gradient_y, sign_flag = gradients._shuffle_signs(-255, -255)
-bins_0, bins_1 = gradients._compute_dir(abs_gradient_x, abs_gradient_y, sign_flag)
-gradient_dir = gradients._combine_dir(bins_0, bins_1)
-print("gradient_dir for -255, -255: " + str(hex(gradient_dir)))
-
-#image = np.arange(100).reshape(10, 10)
-image = np.zeros((44, 100))
-image[20:24, 40:50] = 255
-#print(image[19:25, 39:51])
-#print(image)
-gradients.compute(image)
+    image = np.zeros((44, 100))
+    image[20:24, 40:50] = 255
+    #print(image[19:25, 39:51])
+    #print(image)
+    gradients.compute(image)
 

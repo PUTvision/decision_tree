@@ -13,7 +13,7 @@ class Split:
         self.value_to_compare = value_to_compare_
 
     def show(self):
-        print "Split[", self.id, "], var_idx: ", self.var_idx, ", value to compare: ", self.value_to_compare
+        print("Split[", self.id, "], var_idx: ", self.var_idx, ", value to compare: ", self.value_to_compare)
 
 
 class Leaf:
@@ -31,24 +31,24 @@ class Leaf:
         self.following_split_compare_values = following_spli_compare_values_
 
     def show(self):
-        print "Leaf[", self.id, "], class_idx: ", self.class_idx
+        print("Leaf[", self.id, "], class_idx: ", self.class_idx)
 
-        print "Following splits IDs: "
+        print("Following splits IDs: ")
         splits_ids = ""
         for id_ in self.following_split_IDs:
             splits_ids += str(id_) + ", "
-        print splits_ids
+        print(splits_ids)
 
-        print "Following split compare values: "
+        print("Following split compare values: ")
         compare_values = ""
         for compare_value in self.following_split_compare_values:
             compare_values += str(compare_value) + ", "
-        print compare_values
+        print(compare_values)
 
 from abc import ABCMeta, abstractmethod
 
 
-class VHDLcreator():
+class VHDLcreator:
 
     def __init__(self, name):
         __metaclass__ = ABCMeta
@@ -142,7 +142,6 @@ class VHDLcreator():
     @abstractmethod
     def _add_architecture_component_section(self):
         pass
-
 
     @abstractmethod
     def _add_architecture_signal_section(self):
@@ -261,28 +260,28 @@ class Tree(VHDLcreator):
 
         compare_results = [None] * len(self.splits)
 
-        for split, i in zip(self.splits, xrange(0, len(self.splits))):
+        for split, i in zip(self.splits, range(0, len(self.splits))):
             if input_data[split.var_idx] <= split.value_to_compare:
                 compare_results[i] = 0
             else:
                 compare_results[i] = 1
 
-        #print compare_results
+        #print(compare_results
 
         for leaf in self.leaves:
             number_of_correct_results = 0
 
-            for j in xrange(0, len(leaf.following_split_IDs)):
+            for j in range(0, len(leaf.following_split_IDs)):
                 split_id = leaf.following_split_IDs[j]
                 expected_result = leaf.following_split_compare_values[j]
                 real_result = compare_results[split_id]
 
-                #print "Expected result: ", expected_result, ", real result: ", real_result
+                #print("Expected result: ", expected_result, ", real result: ", real_result
 
                 if expected_result == real_result:
                     number_of_correct_results += 1
 
-            #print "Number of correct result: ", number_of_correct_results, ", should be: ", len(leaf.following_split_IDs)
+            #print("Number of correct result: ", number_of_correct_results, ", should be: ", len(leaf.following_split_IDs)
 
             if number_of_correct_results == len(leaf.following_split_IDs):
                 choosen_class_index = leaf.class_idx
@@ -298,19 +297,19 @@ class Tree(VHDLcreator):
     def print_parameters(self):
         #self.print_leaves()
         #self.print_splits()
-        print "Depth: ", self.find_depth()
-        print "Number of splits: ", len(self.splits)
-        print "Number of leaves: ", len(self.leaves)
+        print("Depth: ", self.find_depth())
+        print("Number of splits: ", len(self.splits))
+        print("Number of leaves: ", len(self.leaves))
 
     def print_splits(self):
-        print "Splits: "
-        print len(self.splits)
+        print("Splits: ")
+        print(len(self.splits))
         for split in self.splits:
             split.show()
 
     def print_leaves(self):
-        print "Leaves: "
-        print len(self.leaves)
+        print("Leaves: ")
+        print(len(self.leaves))
         for leaf in self.leaves:
             leaf.show()
 
@@ -324,9 +323,9 @@ class Tree(VHDLcreator):
         return max(following_splits_number)
 
     @staticmethod
-    def _insert_text_line_with_indent_old(self, text_to_insert, current_indent):
+    def _insert_text_line_with_indent_old(text_to_insert, current_indent):
         text = ""
-        for i in xrange(0, current_indent):
+        for i in range(0, current_indent):
             text += "\t"
         text += text_to_insert
         text += "\n"
@@ -348,7 +347,7 @@ class Tree(VHDLcreator):
         current_indent += 1
 
         # insert all splits
-        for (split, i) in zip(self.splits, xrange(0, len(self.splits))):
+        for (split, i) in zip(self.splits, range(0, len(self.splits))):
             text += self._insert_text_line_with_indent_old(
                 "if unsigned(input(" +
                 str(split.var_idx) + ")) > to_unsigned(" +
@@ -514,7 +513,7 @@ class Tree(VHDLcreator):
         self.current_indent += 1
 
         # insert all splits
-        for (split, i) in zip(self.splits, xrange(0, len(self.splits))):
+        for (split, i) in zip(self.splits, range(0, len(self.splits))):
             text += self._insert_text_line_with_indent(
                 "if unsigned(input(" +
                 str(split.var_idx) + ")) > to_unsigned(" +

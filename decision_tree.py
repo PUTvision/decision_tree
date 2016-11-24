@@ -131,14 +131,14 @@ if __name__ == "__main__":
     from sklearn.tree import DecisionTreeClassifier
     from sklearn.ensemble import RandomForestClassifier
 
-    #for nr_of_trees in xrange(51, 52, 10):
-    for nr_of_trees in xrange(2, 3):
-        #for depth in xrange(1, 21):
-        for depth in xrange(21, 22):
+    #for nr_of_trees in range(51, 52, 10):
+    for nr_of_trees in range(2, 3):
+        #for depth in range(1, 21):
+        for depth in range(21, 22):
 
-            print "Parameters: depth: " + '% 02.0f' %depth + \
+            print( "Parameters: depth: " + '% 02.0f' %depth + \
                   ", nr of trees: " + '% 02.0f' %nr_of_trees + \
-                  "): "
+                  "): ")
 
             classifier = DecisionTreeClassifier(max_depth=depth)
             classifier = classifier.fit(training_data, class_labels)
@@ -158,15 +158,15 @@ if __name__ == "__main__":
         list_of_input_value_names.append(i)
 
     if isinstance(classifier, DecisionTreeClassifier):
-        print "Decision tree classifier!"
+        print("Decision tree classifier!")
         my_classifier = Tree()
 
     elif isinstance(classifier, RandomForestClassifier):
-        print "Random forest classifier!"
+        print("Random forest classifier!")
         my_classifier = RandomForest()
 
     else:
-        print "Unknown type of classifier!"
+        print("Unknown type of classifier!")
 
     my_classifier.build(classifier, list_of_input_value_names)
 
@@ -177,14 +177,14 @@ if __name__ == "__main__":
         my_result = my_classifier.predict(histogram)
 
         if scikit_learn_result != my_result:
-            print "Error!"
+            print("Error!")
 
     for histogram in test_histogram_negative:
         scikit_learn_result = classifier.predict(histogram)
         my_result = my_classifier.predict(histogram)
 
         if scikit_learn_result != my_result:
-            print "Error!"
+            print("Error!")
 
     #my_classifier.create_vhdl_code_old("tree.vhdl")
     my_classifier.create_vhdl_file()
