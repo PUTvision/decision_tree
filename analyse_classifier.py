@@ -14,15 +14,15 @@ def get_code(tree, feature_names):
 
     def recurse(left, right, threshold, features, node):
         if (threshold[node] != -2):
-            print "if ( " + features[node] + " <= " + str(threshold[node]) + " ) {"
+            print("if ( " + features[node] + " <= " + str(threshold[node]) + " ) {")
             if left[node] != -1:
                 recurse (left, right, threshold, features,left[node])
-            print "} else {"
+            print("} else {")
             if right[node] != -1:
                 recurse(left, right, threshold, features,right[node])
-            print "}"
+            print("}")
         else:
-            print "return " + str(value[node])
+            print("return " + str(value[node]))
 
     recurse(left, right, threshold, features, 0)
 
@@ -56,7 +56,7 @@ def get_lineage(tree, feature_names):
 
     for child in idx:
         for node in recurse(left, right, child):
-            print node
+            print(node)
 
 if __name__ == "__main__":
     # sample usage for random forest classifier to show first tree

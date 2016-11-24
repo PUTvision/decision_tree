@@ -130,19 +130,6 @@ if __name__ == "__main__":
     # negative_train_samples_directory = files_directory + "\\Train\\neg\\"
     # negative_test_samples_directory = files_directory + "\\Test\\neg\\"
 
-    # INRIA DATABASE FOR HOG (64x128)
-    width = 64
-    height = 128
-    region_size = 16
-    number_of_positive_samples = 100
-    number_of_positive_tests = 100
-    number_of_negative_samples = 100
-    number_of_negative_tests = 100
-    files_directory = "F:\\Amin\\Desktop\\INRIAPerson\\"
-    positive_samples_directory = files_directory + "70X134H96\\Test\\pos\\"
-    negative_train_samples_directory = files_directory + "\\Train\\neg\\"
-    negative_test_samples_directory = files_directory + "\\Test\\neg\\"
-
     # # TEST SETTINGS
     # width = 25
     # height = 25
@@ -157,17 +144,17 @@ if __name__ == "__main__":
     # negative_test_samples_directory = files_directory + "25x25\\Test\\negative\\"
 
     # CVC Virtual Pedestrian
-    # width = 50
-    # height = 100
-    # region_size = 5
-    # number_of_positive_samples = 500
-    # number_of_positive_tests = 500
-    # number_of_negative_samples = 1000
-    # number_of_negative_tests = 1000
-    # files_directory = "F:\\Amin\\Desktop\\CVC-Virtual-Pedestrian\\train\\"
-    # positive_samples_directory = files_directory + "pedestrians\\"
-    # negative_train_samples_directory = files_directory + "background-frames\\"
-    # negative_test_samples_directory = files_directory + "background-frames\\"
+    width = 50
+    height = 100
+    region_size = 5
+    number_of_positive_samples = 500
+    number_of_positive_tests = 500
+    number_of_negative_samples = 1000
+    number_of_negative_tests = 1000
+    files_directory = "F:\\Amin\\Desktop\\CVC-Virtual-Pedestrian\\train\\"
+    positive_samples_directory = files_directory + "pedestrians\\"
+    negative_train_samples_directory = files_directory + "background-frames\\"
+    negative_test_samples_directory = files_directory + "background-frames\\"
 
     # END OF PARAMETERS SETTING
     #####################################
