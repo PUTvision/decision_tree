@@ -1,6 +1,7 @@
 __author__ = 'Amin'
 
 import numpy as np
+import sklearn.preprocessing
 
 
 class GradientDir:
@@ -50,8 +51,8 @@ class GradientDir:
         #print("pixel_descriptors: \n" + str(pixel_descriptors))
 
         descriptors = self._gradient_adder(pixel_descriptors)
-        print("descriptors: \n" + str(descriptors))
-        print("descriptors size: \n" + str(descriptors.shape))
+        #print("descriptors: \n" + str(descriptors))
+        #print("descriptors size: \n" + str(descriptors.shape))
 
         #for row in descriptors[:]:
         #    for value in row[:]:
@@ -211,9 +212,16 @@ class GradientDir:
         return out
 
     def _gradient_adder(self, grad_in: np.ndarray):
+        # each cell has 9 values, this method computes the sum of all corresponding values
 
-        final_descriptor = np.zeros_like(grad_in)
+        final_descriptor = np.empty(grad_in.shape, dtype=object)
         #print("grad_in.shape: " + str(grad_in.shape))
+
+        empty_final_descriptor = np.zeros(9)
+
+        for row in range(0, final_descriptor.shape[0]):
+            for col in range(0, final_descriptor.shape[1]):
+                final_descriptor[row, col] = empty_final_descriptor
 
         row_start = 3
         row_end = 8 - (row_start + 1)
@@ -221,13 +229,13 @@ class GradientDir:
         col_start = 3
         col_end = 8 - (col_start + 1)
 
-        print("Row: " + str(row_start) + ", " + str(row_end) + "\n")
-        print("Col: " + str(col_start) + ", " + str(col_end) + "\n")
+        #print("Starting row: " + str(row_start) + ", " + str(row_end) + "\n")
+        #print("Starting col: " + str(col_start) + ", " + str(col_end) + "\n")
 
         for row in range(row_start, grad_in.shape[0]-row_end):
             for col in range(col_start, grad_in.shape[1]-col_end):
 
-                subarray = np.asarray(grad_in[row-4:row+3+1, col-4:col+3+1])
+                subarray = np.asarray(grad_in[row-row_start:row+row_end+1, col-col_start:col+col_end+1])
                 #print("subarray.shape: " + str(subarray.shape))
 
                 sum = subarray.sum()
@@ -235,20 +243,60 @@ class GradientDir:
 
                 final_descriptor[row, col] = sum
 
-        # each cell has 9 values, this function should compute the sum of all corresponding values
         return final_descriptor
+
+
+def hog(image, orientations=9, pixels_per_cell=(8, 8), cells_per_block=(2, 2)):
+    gradients = GradientDir()
+    # pixels_per_cell is integrated into _gradient_adder method of GradientDir and does operate on 8x8 windows
+    descriptors = gradients.compute(image)
+
+    # now the block 2x2, that overlaps themselves should be calculated
+    # for the moment we are counting on the image provided to be 6 pixels wider (3 pixels on each side)
+    # and 6 pixels higher (3 pixels on each size) than the required size og 64x128
+    nrows, ncols = image.shape
+
+    feature_vector = np.empty([0, 0])
+
+    for row in range(3, nrows-8, 8):
+        #print("Row: " + str(row))
+
+        for col in range(3, ncols-8, 8):
+            #print("Col: " + str(col))
+
+            cell_feature_vector = [descriptors[row, col],
+                                   descriptors[row, col + 8],
+                                   descriptors[row + 8, col],
+                                   descriptors[row + 8, col + 8]
+                                   ]
+
+            cell_feature_vector = np.reshape(cell_feature_vector, 36)
+            cell_feature_vector = sklearn.preprocessing.normalize([cell_feature_vector], norm='l2').ravel()
+
+            #print(cell_feature_vector)
+
+            feature_vector = np.append(feature_vector, cell_feature_vector)
+            #feature_vector.append(cell_feature_vector)
+            #feature_vector = feature_vector.ravel()
+
+    #print("Length of feature vector: " + str(len(feature_vector.tolist())))
+
+    return feature_vector.tolist()
+
 
 if __name__ == "__main__":
 
     gradients = GradientDir()
-    abs_gradient_x, abs_gradient_y, sign_flag = gradients._shuffle_signs(-255, -255)
-    bins_0, bins_1 = gradients._compute_dir(abs_gradient_x, abs_gradient_y, sign_flag)
-    gradient_dir = gradients._combine_dir(bins_0, bins_1)
-    print("gradient_dir for -255, -255: " + str(hex(gradient_dir)))
 
-    image = np.zeros((44, 100))
+    # abs_gradient_x, abs_gradient_y, sign_flag = gradients._shuffle_signs(-255, -255)
+    # bins_0, bins_1 = gradients._compute_dir(abs_gradient_x, abs_gradient_y, sign_flag)
+    # gradient_dir = gradients._combine_dir(bins_0, bins_1)
+    # print("gradient_dir for -255, -255: " + str(hex(gradient_dir)))
+
+    # image = np.zeros((44, 100))
+    image = np.zeros((64, 128))
     image[20:24, 40:50] = 255
-    #print(image[19:25, 39:51])
-    #print(image)
-    gradients.compute(image)
+    # print(image[19:25, 39:51])
+    # gradients.compute(image)
 
+    hog(image)

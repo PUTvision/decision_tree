@@ -14,9 +14,9 @@ width = 64
 height = 128
 region_size = 16
 number_of_positive_samples = 200
-number_of_positive_tests = 100
+number_of_positive_tests = 50
 number_of_negative_samples = 200
-number_of_negative_tests = 100
+number_of_negative_tests = 50
 files_directory = "F:\\Amin\\Desktop\\INRIAPerson\\"
 positive_samples_directory = files_directory + "70X134H96\\Test\\pos\\"
 negative_train_samples_directory = files_directory + "\\Train\\neg\\"
@@ -71,6 +71,8 @@ def get_description_of_image_from_file(filename, flag_use_part_of_image=False, s
     # http://scikit-image.org/docs/dev/api/skimage.feature.html?highlight=hog#skimage.feature.hog
     feature_vector, hog_image = skimage.feature.hog(image_from_file, orientations=9, pixels_per_cell=(8, 8),
                     cells_per_block=(2, 2), visualise=True)
+
+    #feature_vector = HOG_modified.hog(image_from_file)
 
     if len(feature_vector) != 3780:
         print("Wrong feature vector size for specified HOG parameters. Should be: 3780, while it is: " + str(len(feature_vector)))
