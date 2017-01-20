@@ -6,6 +6,7 @@ import glob
 import random
 import pickle
 import HOG_modified
+import random
 
 #####################################
 # SET THE FOLLOWING PARAMETERS
@@ -23,6 +24,7 @@ negative_train_samples_directory = files_directory + "\\Train\\neg\\"
 negative_test_samples_directory = files_directory + "\\Test\\neg\\"
 # END OF PARAMETERS SETTING
 #####################################
+
 
 def show_images(original, hog):
     fig, (ax_image_original, ax_image_hog) = plt.subplots(1, 2, figsize=(8, 4), sharex=True, sharey=True)
@@ -69,18 +71,20 @@ def get_description_of_image_from_file(filename, flag_use_part_of_image=False, s
 
     # TODO - should we add global image normalisation?
     # http://scikit-image.org/docs/dev/api/skimage.feature.html?highlight=hog#skimage.feature.hog
-    feature_vector, hog_image = skimage.feature.hog(image_from_file, orientations=9, pixels_per_cell=(8, 8),
+    feature_vector_original, hog_image = skimage.feature.hog(image_from_file, orientations=9, pixels_per_cell=(8, 8),
                     cells_per_block=(2, 2), visualise=True)
 
-    #feature_vector = HOG_modified.hog(image_from_file)
+    feature_vector_modified = HOG_modified.hog(image_from_file)
 
-    if len(feature_vector) != 3780:
-        print("Wrong feature vector size for specified HOG parameters. Should be: 3780, while it is: " + str(len(feature_vector)))
+    if len(feature_vector_original) != 3780 or len(feature_vector_modified) != 3780:
+        print("Wrong feature vector size for specified HOG parameters. Should be: 3780)")
+        print("Original feature vector size: " + str(len(feature_vector_original)))
+        print("Modified feature vector size: " + str(len(feature_vector_modified)))
 
     if show:
         show_images(image_from_file, hog_image)
 
-    return feature_vector
+    return feature_vector_original, feature_vector_modified
 
 
 if __name__ == "__main__":
@@ -89,39 +93,63 @@ if __name__ == "__main__":
     train_data_negative = []
     test_data_negative = []
 
+    train_data_positive_modified = []
+    test_data_positive_modified = []
+    train_data_negative_modified = []
+    test_data_negative_modified = []
+
     # prepare positive examples
     png_filenames = glob.glob(positive_samples_directory + "*.png")
+    random.shuffle(png_filenames)
     for filename in png_filenames[:number_of_positive_samples]:
-        data = get_description_of_image_from_file(filename, show=False)
+        data, data_modified = get_description_of_image_from_file(filename, show=False)
         train_data_positive.append(data)
+        train_data_positive_modified.append(data_modified)
 
     for filename in png_filenames[number_of_positive_samples:(number_of_positive_samples+number_of_positive_tests)]:
-        data = get_description_of_image_from_file(filename, show=False)
+        data, data_modified = get_description_of_image_from_file(filename, show=False)
         test_data_positive.append(data)
+        test_data_positive_modified.append(data_modified)
 
     # prepare negative examples
     png_filenames = glob.glob(negative_train_samples_directory + "*.png") + glob.glob(negative_train_samples_directory + "*.jpg")
+    random.shuffle(png_filenames)
     for filename in png_filenames[:number_of_negative_samples]:
-        data = get_description_of_image_from_file(filename, flag_use_part_of_image=True, show=False)
+        data, data_modified = get_description_of_image_from_file(filename, flag_use_part_of_image=True, show=False)
         train_data_negative.append(data)
+        train_data_negative_modified.append(data_modified)
 
     png_filenames = glob.glob(negative_test_samples_directory + "*.png") + glob.glob(negative_test_samples_directory + "*.jpg")
+    random.shuffle(png_filenames)
     for filename in png_filenames[:number_of_negative_tests]:
-        data = get_description_of_image_from_file(filename, flag_use_part_of_image=True, show=False)
+        data, data_modified = get_description_of_image_from_file(filename, flag_use_part_of_image=True, show=False)
         test_data_negative.append(data)
+        test_data_negative_modified.append(data_modified)
 
     print(len(train_data_positive))
     with open("data\\positive_data", "wb") as f:
         pickle.dump(train_data_positive, f)
+    print(len(train_data_positive_modified))
+    with open("data\\positive_data_modified", "wb") as f:
+        pickle.dump(train_data_positive_modified, f)
 
     print(len(test_data_positive))
     with open("data\\test_positive_data", "wb") as f:
         pickle.dump(test_data_positive, f)
+    print(len(test_data_positive_modified))
+    with open("data\\test_positive_data_modified", "wb") as f:
+        pickle.dump(test_data_positive_modified, f)
 
     print(len(train_data_negative))
     with open("data\\negative_data", "wb") as f:
         pickle.dump(train_data_negative, f)
+    print(len(train_data_negative_modified))
+    with open("data\\negative_data_modified", "wb") as f:
+        pickle.dump(train_data_negative_modified, f)
 
     print(len(test_data_negative))
     with open("data\\test_negative_data", "wb") as f:
         pickle.dump(test_data_negative, f)
+    print(len(test_data_negative_modified))
+    with open("data\\test_negative_data_modified", "wb") as f:
+        pickle.dump(test_data_negative_modified, f)
