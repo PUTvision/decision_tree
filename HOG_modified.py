@@ -233,13 +233,13 @@ class GradientDir:
             distance_to_current = abs(angle_in_degrees - bins_center_angle[0])
             distance_to_next = size_of_bins - distance_to_current
 
-            bins_values[0, 0] = 0.5#distance_to_next/size_of_bins
-            bins_values[0, 1] = 0.5#distance_to_current/size_of_bins
+            bins_values[0, 0] = self._convert_to_fixed_point(distance_to_next/size_of_bins)
+            bins_values[0, 1] = self._convert_to_fixed_point(distance_to_current/size_of_bins)
         elif angle_in_degrees > bins_center_angle[-1]:
             distance_to_current = abs(angle_in_degrees - bins_center_angle[-1])
             distance_to_next = size_of_bins - distance_to_current
-            bins_values[0, 0] = 0.5#distance_to_next/size_of_bins
-            bins_values[0, -1] = 0.5#distance_to_current/size_of_bins
+            bins_values[0, 0] = self._convert_to_fixed_point(distance_to_next/size_of_bins)
+            bins_values[0, -1] = self._convert_to_fixed_point(distance_to_current/size_of_bins)
         else:
             for i, [current_center_angle, next_center_angle] in enumerate(zip(bins_center_angle[:-1], bins_center_angle[1:])):
                 if angle_in_degrees == current_center_angle:
@@ -254,8 +254,8 @@ class GradientDir:
                     distance_to_current = abs(angle_in_degrees - current_center_angle)
                     distance_to_next = abs(angle_in_degrees - next_center_angle)
 
-                    bins_values[0, i] = 0.5#distance_to_next/size_of_bins
-                    bins_values[0, i+1] = 0.5#distance_to_current/size_of_bins
+                    bins_values[0, i] = self._convert_to_fixed_point(distance_to_next/size_of_bins)
+                    bins_values[0, i+1] = self._convert_to_fixed_point(distance_to_current/size_of_bins)
 
         # multiply by grad_norm
         bins_values = bins_values * gradient_norm

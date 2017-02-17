@@ -152,25 +152,25 @@ def generate_my_classifier(classifier):
 if __name__ == "__main__":
 
     # version for HOG
-    data_filename = "data"
+    data_filename = "samples_modified"
     # version for LBP
     #data_filename = "histograms"
 
     # prepare the training data
-    with open("data\\positive_" + str(data_filename), "rb") as f:
+    with open("data\\positive_train_" + str(data_filename) + ".pickle", "rb") as f:
         train_data_positive = pickle.load(f)
 
     class_labels_positive = [1] * len(train_data_positive)
 
-    with open("data\\test_positive_" + str(data_filename), "rb") as f:
+    with open("data\\positive_test_" + str(data_filename) + ".pickle", "rb") as f:
         test_data_positive = pickle.load(f)
 
-    with open("data\\negative_" + str(data_filename), "rb") as f:
+    with open("data\\negative_train_" + str(data_filename) + ".pickle", "rb") as f:
         train_data_negative = pickle.load(f)
 
     class_labels_negative = [0] * len(train_data_negative)
 
-    with open("data\\test_negative_" + str(data_filename), "rb") as f:
+    with open("data\\negative_test_" + str(data_filename) + ".pickle", "rb") as f:
         test_data_negative = pickle.load(f)
 
     training_data = train_data_positive + train_data_negative
