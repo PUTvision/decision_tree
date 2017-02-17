@@ -2,29 +2,16 @@ import skimage.data
 import skimage.feature
 import skimage
 import matplotlib.pyplot as plt
-import glob
-import random
 import pickle
 import HOG_modified
-import random
 
 #####################################
 # SET THE FOLLOWING PARAMETERS
 # INRIA DATABASE FOR HOG (64x128)
 width = 64
 height = 128
-region_size = 16
-number_of_positive_samples = 200
-number_of_positive_tests = 50
-number_of_negative_samples = 200
-number_of_negative_tests = 50
-files_directory = "F:\\Amin\\Desktop\\INRIAPerson\\"
-positive_samples_directory = files_directory + "70X134H96\\Test\\pos\\"
-negative_train_samples_directory = files_directory + "\\Train\\neg\\"
-negative_test_samples_directory = files_directory + "\\Test\\neg\\"
 # END OF PARAMETERS SETTING
 #####################################
-
 
 def show_images(original, hog):
     fig, (ax_image_original, ax_image_hog) = plt.subplots(1, 2, figsize=(8, 4), sharex=True, sharey=True)
@@ -49,107 +36,59 @@ def show_images(original, hog):
     plt.close()
 
 
-def get_description_of_image_from_file(filename, flag_use_part_of_image=False, show=False):
+def HOG_function(filename, flag_use_skimage_version):
     print(filename)
 
     image_from_file = skimage.data.imread(filename, as_grey=True)
 
     nrows, ncols = image_from_file.shape
-
-    if flag_use_part_of_image:
-        # choose left upper corner
-        if nrows > height and ncols > width:
-            x = random.randint(0, nrows - 1 - height)
-            y = random.randint(0, ncols - 1 - width)
-            # print x, y
-            part_of_image = image_from_file[x:x + height, y:y + width]
-            # print part_of_image
-            image_from_file = part_of_image
-    else:
-        # crop the image to 64 x 128 pixel size
+    if nrows == 134 and ncols == 70:
+        # crop the image to 64 x 128 pixel size (crop from all sides by 3 pixels)
         image_from_file = skimage.util.crop(image_from_file, 3)
+    elif nrows > height and ncols > width:
+        print("\n\nERROR, image of a wrong size!\n\n")
 
-    # TODO - should we add global image normalisation?
-    # http://scikit-image.org/docs/dev/api/skimage.feature.html?highlight=hog#skimage.feature.hog
-    feature_vector_original, hog_image = skimage.feature.hog(image_from_file, orientations=9, pixels_per_cell=(8, 8),
-                    cells_per_block=(2, 2), visualise=True)
+    if flag_use_skimage_version:
+        feature_vector_original = skimage.feature.hog(image_from_file, orientations=9,
+                                                      pixels_per_cell=(8, 8),
+                                                      cells_per_block=(2, 2))
+    else:
+        feature_vector_original = HOG_modified.hog(image_from_file)
 
-    feature_vector_modified = HOG_modified.hog(image_from_file)
-
-    if len(feature_vector_original) != 3780 or len(feature_vector_modified) != 3780:
+    if len(feature_vector_original) != 3780:
         print("Wrong feature vector size for specified HOG parameters. Should be: 3780)")
-        print("Original feature vector size: " + str(len(feature_vector_original)))
-        print("Modified feature vector size: " + str(len(feature_vector_modified)))
+        print("Feature vector actual size: " + str(len(feature_vector_original)))
 
-    if show:
-        show_images(image_from_file, hog_image)
+    return feature_vector_original
 
-    return feature_vector_original, feature_vector_modified
+
+def load_filenames_process_and_save_results(filename, flag_use_skimage_version):
+    # load samples filenames
+    with open("data\\samples_filenames\\" + filename + "_filenames.pickle", "rb") as f:
+        samples_filenames = pickle.load(f)
+
+    data = []
+    for sample_filename in samples_filenames:
+        single_data = HOG_function(sample_filename, flag_use_skimage_version)
+        data.append(single_data)
+
+    print(len(data))
+    if flag_use_skimage_version:
+        output_filename_modifier = ""
+    else:
+        output_filename_modifier = "_modified"
+    with open("data\\" + filename + output_filename_modifier + ".pickle", "wb") as f:
+        pickle.dump(data, f)
 
 
 if __name__ == "__main__":
-    train_data_positive = []
-    test_data_positive = []
-    train_data_negative = []
-    test_data_negative = []
 
-    train_data_positive_modified = []
-    test_data_positive_modified = []
-    train_data_negative_modified = []
-    test_data_negative_modified = []
+    # load_filenames_process_and_save_results("positive_train_samples", True)
+    # load_filenames_process_and_save_results("positive_test_samples", True)
+    # load_filenames_process_and_save_results("negative_train_samples", True)
+    # load_filenames_process_and_save_results("negative_test_samples", True)
 
-    # prepare positive examples
-    png_filenames = glob.glob(positive_samples_directory + "*.png")
-    random.shuffle(png_filenames)
-    for filename in png_filenames[:number_of_positive_samples]:
-        data, data_modified = get_description_of_image_from_file(filename, show=False)
-        train_data_positive.append(data)
-        train_data_positive_modified.append(data_modified)
-
-    for filename in png_filenames[number_of_positive_samples:(number_of_positive_samples+number_of_positive_tests)]:
-        data, data_modified = get_description_of_image_from_file(filename, show=False)
-        test_data_positive.append(data)
-        test_data_positive_modified.append(data_modified)
-
-    # prepare negative examples
-    png_filenames = glob.glob(negative_train_samples_directory + "*.png") + glob.glob(negative_train_samples_directory + "*.jpg")
-    random.shuffle(png_filenames)
-    for filename in png_filenames[:number_of_negative_samples]:
-        data, data_modified = get_description_of_image_from_file(filename, flag_use_part_of_image=True, show=False)
-        train_data_negative.append(data)
-        train_data_negative_modified.append(data_modified)
-
-    png_filenames = glob.glob(negative_test_samples_directory + "*.png") + glob.glob(negative_test_samples_directory + "*.jpg")
-    random.shuffle(png_filenames)
-    for filename in png_filenames[:number_of_negative_tests]:
-        data, data_modified = get_description_of_image_from_file(filename, flag_use_part_of_image=True, show=False)
-        test_data_negative.append(data)
-        test_data_negative_modified.append(data_modified)
-
-    print(len(train_data_positive))
-    with open("data\\positive_data", "wb") as f:
-        pickle.dump(train_data_positive, f)
-    print(len(train_data_positive_modified))
-    with open("data\\positive_data_modified", "wb") as f:
-        pickle.dump(train_data_positive_modified, f)
-
-    print(len(test_data_positive))
-    with open("data\\test_positive_data", "wb") as f:
-        pickle.dump(test_data_positive, f)
-    print(len(test_data_positive_modified))
-    with open("data\\test_positive_data_modified", "wb") as f:
-        pickle.dump(test_data_positive_modified, f)
-
-    print(len(train_data_negative))
-    with open("data\\negative_data", "wb") as f:
-        pickle.dump(train_data_negative, f)
-    print(len(train_data_negative_modified))
-    with open("data\\negative_data_modified", "wb") as f:
-        pickle.dump(train_data_negative_modified, f)
-
-    print(len(test_data_negative))
-    with open("data\\test_negative_data", "wb") as f:
-        pickle.dump(test_data_negative, f)
-    print(len(test_data_negative_modified))
-    with open("data\\test_negative_data_modified", "wb") as f:
-        pickle.dump(test_data_negative_modified, f)
+    load_filenames_process_and_save_results("positive_train_samples", False)
+    load_filenames_process_and_save_results("positive_test_samples", False)
+    load_filenames_process_and_save_results("negative_train_samples", False)
+    load_filenames_process_and_save_results("negative_test_samples", False)

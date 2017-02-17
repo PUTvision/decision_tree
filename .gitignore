@@ -1,3 +1,6 @@
+data/
+decison_trees_vhdl/
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
