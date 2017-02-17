@@ -1,9 +1,7 @@
-__author__ = 'Amin'
-
 import numpy as np
 import sklearn.preprocessing
 import math
-import matplotlib.pyplot as plt
+import decimal
 
 
 class GradientDir:
@@ -70,6 +68,12 @@ class GradientDir:
         print("Number pf differences: " + str(number_of_differences))
         print("Done!")
 
+    def _convert_to_fixed_point(self, float_value):
+        n_bits = 4
+        f = (1 << n_bits)
+
+        return np.round(float_value*f)*(1.0/f)
+
     def _downto_fix(self, pixel_descriptor):
         import copy
         temp = copy.deepcopy(pixel_descriptor)
@@ -93,8 +97,6 @@ class GradientDir:
 
         return pixel_descriptor
 
-        return pixel_descriptor
-
     def compute(self, image: np.ndarray):
 
         pixel_descriptors = np.empty(image.shape, dtype=object)
@@ -115,13 +117,13 @@ class GradientDir:
                 #if gradient_y != 0:
                 #    print("y: (" + str(row) + ", " + str(col) + "): " + str(gradient_y))
 
-                abs_gradient_x, abs_gradient_y, sign_flag = self._shuffle_signs(gradient_x, gradient_y)
+                ##abs_gradient_x, abs_gradient_y, sign_flag = self._shuffle_signs(gradient_x, gradient_y)
                 #print("abs_gradient_x: " + str(abs_gradient_x) + ", abs_gradient_y: " + str(abs_gradient_y))
 
-                bins_0, bins_1 = self._compute_dir(abs_gradient_x, abs_gradient_y, sign_flag)
+               ## bins_0, bins_1 = self._compute_dir(abs_gradient_x, abs_gradient_y, sign_flag)
                 #print("bins_0: " + str(bin(bins_0)) + ", bins_1: " + str(bin(bins_1)))
 
-                gradient_dir = self._combine_dir(bins_0, bins_1)
+               ## gradient_dir = self._combine_dir(bins_0, bins_1)
                 #if gradient_dir != int(0x140):  # decimal: 320
                     #print("gradient_dir: (" + str(row) + ", " + str(col) + "): " + str(hex(gradient_dir) + ",\t\t\t" + str(bin(gradient_dir)) ))
 
@@ -129,12 +131,12 @@ class GradientDir:
                 #if gradient_norm != 0:
                     #print("gradient_norm: (" + str(row) + ", " + str(col) + "): " + str(gradient_norm))
 
-                pixel_descriptor = self._gradient_demux(gradient_dir, gradient_norm)
-                pixel_descriptor = self._bin_mixing(pixel_descriptor)
+                ##pixel_descriptor = self._gradient_demux(gradient_dir, gradient_norm)
+                ##pixel_descriptor = self._bin_mixing(pixel_descriptor)
                 #print("pixel_descriptor: " + str(pixel_descriptor))
 
-                ##pd = self._compute_and_combine_dir_and_demux_gradien(gradient_x, gradient_y, gradient_norm)
-                ##pixel_descriptor = pd.ravel().tolist()
+                pd = self._compute_and_combine_dir_and_demux_gradien(gradient_x, gradient_y, gradient_norm)
+                pixel_descriptor = pd.ravel().tolist()
 
                 pixel_descriptors[row][col] = np.asarray(pixel_descriptor)
 
@@ -185,8 +187,9 @@ class GradientDir:
             #print("x: " + str(gradient_x) + ", y: " + str(gradient_y) + ", angle: " + str(angle_in_degrees))
 
         # place the angle into appropriate bins
+        size_of_bins = 20
         bins_center_angle = []
-        for i in range(-80, 100, 20):
+        for i in range(-80, 100, size_of_bins):
             bins_center_angle.append(float(i))
         #print(bins_center_angle)
 
@@ -228,14 +231,15 @@ class GradientDir:
         # check if the angle is smaller than center point of first bin
         if angle_in_degrees < bins_center_angle[0]:
             distance_to_current = abs(angle_in_degrees - bins_center_angle[0])
-            distance_to_next = 20 - distance_to_current
-            bins_values[0, 0] = 0.5#distance_to_next/20
-            bins_values[0, 1] = 0.5#distance_to_current/20
+            distance_to_next = size_of_bins - distance_to_current
+
+            bins_values[0, 0] = 0.5#distance_to_next/size_of_bins
+            bins_values[0, 1] = 0.5#distance_to_current/size_of_bins
         elif angle_in_degrees > bins_center_angle[-1]:
             distance_to_current = abs(angle_in_degrees - bins_center_angle[-1])
-            distance_to_next = 20 - distance_to_current
-            bins_values[0, 0] = 0.5#distance_to_next/20
-            bins_values[0, 8] = 0.5#distance_to_current/20
+            distance_to_next = size_of_bins - distance_to_current
+            bins_values[0, 0] = 0.5#distance_to_next/size_of_bins
+            bins_values[0, -1] = 0.5#distance_to_current/size_of_bins
         else:
             for i, [current_center_angle, next_center_angle] in enumerate(zip(bins_center_angle[:-1], bins_center_angle[1:])):
                 if angle_in_degrees == current_center_angle:
@@ -250,8 +254,8 @@ class GradientDir:
                     distance_to_current = abs(angle_in_degrees - current_center_angle)
                     distance_to_next = abs(angle_in_degrees - next_center_angle)
 
-                    bins_values[0, i] = 0.5#distance_to_next/20
-                    bins_values[0, i+1] = 0.5#distance_to_current/20
+                    bins_values[0, i] = 0.5#distance_to_next/size_of_bins
+                    bins_values[0, i+1] = 0.5#distance_to_current/size_of_bins
 
         # multiply by grad_norm
         bins_values = bins_values * gradient_norm
@@ -508,7 +512,7 @@ def hog(image, orientations=9, pixels_per_cell=(8, 8), cells_per_block=(2, 2)):
 
     # now the block 2x2, that overlaps themselves should be calculated
     # for the moment we are counting on the image provided to be 6 pixels wider (3 pixels on each side)
-    # and 6 pixels higher (3 pixels on each size) than the required size og 64x128
+    # and 6 pixels higher (3 pixels on each size) than the required size of 64x128
     nrows, ncols = image.shape
 
     feature_vector = np.empty([0, 0])
@@ -531,8 +535,6 @@ def hog(image, orientations=9, pixels_per_cell=(8, 8), cells_per_block=(2, 2)):
             #print(cell_feature_vector)
 
             feature_vector = np.append(feature_vector, cell_feature_vector)
-            #feature_vector.append(cell_feature_vector)
-            #feature_vector = feature_vector.ravel()
 
     #print("Length of feature vector: " + str(len(feature_vector.tolist())))
 
@@ -558,4 +560,4 @@ if __name__ == "__main__":
     # print(image[19:25, 39:51])
     # gradients.compute(image)
 
-    hog(image)
+    print(len(hog(image)))

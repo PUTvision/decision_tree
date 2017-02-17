@@ -49,7 +49,8 @@ def HOG_function(filename, flag_use_skimage_version):
         print("\n\nERROR, image of a wrong size!\n\n")
 
     if flag_use_skimage_version:
-        feature_vector_original = skimage.feature.hog(image_from_file, orientations=9,
+        feature_vector_original = skimage.feature.hog(image_from_file,
+                                                      orientations=9,
                                                       pixels_per_cell=(8, 8),
                                                       cells_per_block=(2, 2))
     else:
