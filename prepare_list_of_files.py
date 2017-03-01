@@ -20,7 +20,7 @@ if __name__ == "__main__":
     # END OF PARAMETERS SETTING
     #####################################
 
-    # prepare positive examples
+    # prepare positive examples, both train and test
     positive_samples_filenames = glob.glob(positive_samples_directory + "*.png")
     random.shuffle(positive_samples_filenames)
     print(len(positive_samples_filenames[:number_of_positive_samples]))

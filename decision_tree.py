@@ -104,6 +104,63 @@ def test_classification_performance(clf, test_data):
               str(number_of_data_to_test) + "values.")
 
 
+def train_classifier_and_test(data_filename, nr_pos_train, nr_pos_test, nr_neg_train, nr_neg_test):
+    # prepare the training data
+    with open("data\\positive_train_" + str(data_filename) + ".pickle", "rb") as f:
+        train_data_positive = pickle.load(f)
+
+    class_labels_positive = [1] * len(train_data_positive)
+
+    with open("data\\positive_test_" + str(data_filename) + ".pickle", "rb") as f:
+        test_data_positive = pickle.load(f)
+
+    with open("data\\negative_train_" + str(data_filename) + ".pickle", "rb") as f:
+        train_data_negative = pickle.load(f)
+
+    class_labels_negative = [0] * len(train_data_negative)
+
+    with open("data\\negative_test_" + str(data_filename) + ".pickle", "rb") as f:
+        test_data_negative = pickle.load(f)
+
+    training_data = train_data_positive[0:nr_pos_train] + train_data_negative[0:nr_neg_train]
+    class_labels = class_labels_positive[0:nr_pos_train] + class_labels_negative[0:nr_neg_train]
+
+    # train and test the classifier
+    classifier = None
+
+    from sklearn.tree import DecisionTreeClassifier
+    from sklearn.ensemble import RandomForestClassifier
+    from sklearn.svm import LinearSVC
+
+    #for nr_of_trees in range(51, 52, 10):
+    for nr_of_trees in range(2, 3):
+        #for depth in range(1, 21):
+        for depth in range(21, 22):
+
+            #print("Parameters: depth: " + '% 02.0f' % depth +
+            #      ", nr of trees: " + '% 02.0f' % nr_of_trees +
+            #      "): ")
+
+            # classifier = DecisionTreeClassifier(max_depth=depth)
+            # classifier = classifier.fit(training_data, class_labels)
+
+            #classifier = RandomForestClassifier(n_estimators=nr_of_trees, max_depth=depth)
+            #classifier = classifier.fit(training_data, class_labels)
+
+            classfier = LinearSVC()
+            classifier = classfier.fit(training_data, class_labels)
+
+            check_and_print_classifier_accuracy(classifier,
+                                                test_data_positive[:nr_pos_test],
+                                                test_data_negative[:nr_neg_test]
+                                                )
+
+    # Use this to test the performance (speed of execution)
+    #test_classification_performance(classifier, test_data_positive)
+
+    #generate_my_classifier(classfier)
+
+
 def generate_my_classifier(classifier):
     list_of_input_value_names = []
     # TODO - this value should be taken automatically
@@ -150,60 +207,34 @@ def generate_my_classifier(classifier):
     #visualize_tree(classifier, "tree_visualization\\tree")
 
 if __name__ == "__main__":
+    #####################################
+    # SET THE FOLLOWING PARAMETERS
+    # INRIA DATABASE FOR HOG (64x128)
+    # total number of positive samples: 1126, but only 1100 can be used here
+    number_of_positive_samples = 600
+    number_of_positive_tests = 400
+    # total number of negative train samples: 1218, but only 1200 can be used here
+    number_of_negative_samples = 1000
+    # total number of negative test samples: 453, , but only 400 can be used here
+    number_of_negative_tests = 400
+    # END OF PARAMETERS SETTING
+    #####################################
 
     # version for HOG
-    data_filename = "samples_modified"
+    print("Result with HoG modified:")
+    train_classifier_and_test("samples_modified",
+                              number_of_positive_samples,
+                              number_of_positive_tests,
+                              number_of_negative_samples,
+                              number_of_negative_tests
+                              )
+    print("Result with HoG from skimage:")
+    train_classifier_and_test("samples",
+                              number_of_positive_samples,
+                              number_of_positive_tests,
+                              number_of_negative_samples,
+                              number_of_negative_tests
+                              )
+
     # version for LBP
     #data_filename = "histograms"
-
-    # prepare the training data
-    with open("data\\positive_train_" + str(data_filename) + ".pickle", "rb") as f:
-        train_data_positive = pickle.load(f)
-
-    class_labels_positive = [1] * len(train_data_positive)
-
-    with open("data\\positive_test_" + str(data_filename) + ".pickle", "rb") as f:
-        test_data_positive = pickle.load(f)
-
-    with open("data\\negative_train_" + str(data_filename) + ".pickle", "rb") as f:
-        train_data_negative = pickle.load(f)
-
-    class_labels_negative = [0] * len(train_data_negative)
-
-    with open("data\\negative_test_" + str(data_filename) + ".pickle", "rb") as f:
-        test_data_negative = pickle.load(f)
-
-    training_data = train_data_positive + train_data_negative
-    class_labels = class_labels_positive + class_labels_negative
-
-    # train and test the classifier
-    classifier = None
-
-    from sklearn.tree import DecisionTreeClassifier
-    from sklearn.ensemble import RandomForestClassifier
-    from sklearn.svm import LinearSVC
-
-    #for nr_of_trees in range(51, 52, 10):
-    for nr_of_trees in range(2, 3):
-        #for depth in range(1, 21):
-        for depth in range(21, 22):
-
-            print("Parameters: depth: " + '% 02.0f' % depth +
-                  ", nr of trees: " + '% 02.0f' % nr_of_trees +
-                  "): ")
-
-            # classifier = DecisionTreeClassifier(max_depth=depth)
-            # classifier = classifier.fit(training_data, class_labels)
-
-            #classifier = RandomForestClassifier(n_estimators=nr_of_trees, max_depth=depth)
-            #classifier = classifier.fit(training_data, class_labels)
-
-            classfier = LinearSVC()
-            classifier = classfier.fit(training_data, class_labels)
-
-            check_and_print_classifier_accuracy(classifier, test_data_positive, test_data_negative)
-
-    # Use this to test the performance (speed of execution)
-    #test_classification_performance(classifier, test_data_positive)
-
-    #generate_my_classifier(classfier)

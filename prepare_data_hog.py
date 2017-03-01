@@ -84,10 +84,10 @@ def load_filenames_process_and_save_results(filename, flag_use_skimage_version):
 
 if __name__ == "__main__":
 
-    # load_filenames_process_and_save_results("positive_train_samples", True)
-    # load_filenames_process_and_save_results("positive_test_samples", True)
-    # load_filenames_process_and_save_results("negative_train_samples", True)
-    # load_filenames_process_and_save_results("negative_test_samples", True)
+    load_filenames_process_and_save_results("positive_train_samples", True)
+    load_filenames_process_and_save_results("positive_test_samples", True)
+    load_filenames_process_and_save_results("negative_train_samples", True)
+    load_filenames_process_and_save_results("negative_test_samples", True)
 
     load_filenames_process_and_save_results("positive_train_samples", False)
     load_filenames_process_and_save_results("positive_test_samples", False)
