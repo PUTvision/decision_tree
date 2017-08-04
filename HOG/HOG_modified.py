@@ -69,7 +69,7 @@ class GradientDir:
         print("Done!")
 
     def _convert_to_fixed_point(self, float_value):
-        n_bits = 4
+        n_bits = 1
         f = (1 << n_bits)
 
         return np.round(float_value*f)*(1.0/f)
@@ -110,20 +110,20 @@ class GradientDir:
 
         for row in range(1, image.shape[0]-1):
             for col in range(1, image.shape[1]-1):
-                gradient_x = image[row, col+1] - image[row, col-1]
-                gradient_y = image[row+1, col] - image[row-1, col]
+                gradient_x = np.int32(image[row, col+1]) - np.int32(image[row, col-1])
+                gradient_y = np.int32(image[row+1, col]) - np.int32(image[row-1, col])
                 #if gradient_x != 0:
                 #    print("x: (" + str(row) + ", " + str(col) + "): " + str(gradient_x))
                 #if gradient_y != 0:
                 #    print("y: (" + str(row) + ", " + str(col) + "): " + str(gradient_y))
 
-                ##abs_gradient_x, abs_gradient_y, sign_flag = self._shuffle_signs(gradient_x, gradient_y)
+                abs_gradient_x, abs_gradient_y, sign_flag = self._shuffle_signs(gradient_x, gradient_y)
                 #print("abs_gradient_x: " + str(abs_gradient_x) + ", abs_gradient_y: " + str(abs_gradient_y))
 
-               ## bins_0, bins_1 = self._compute_dir(abs_gradient_x, abs_gradient_y, sign_flag)
+                bins_0, bins_1 = self._compute_dir(abs_gradient_x, abs_gradient_y, sign_flag)
                 #print("bins_0: " + str(bin(bins_0)) + ", bins_1: " + str(bin(bins_1)))
 
-               ## gradient_dir = self._combine_dir(bins_0, bins_1)
+                gradient_dir = self._combine_dir(bins_0, bins_1)
                 #if gradient_dir != int(0x140):  # decimal: 320
                     #print("gradient_dir: (" + str(row) + ", " + str(col) + "): " + str(hex(gradient_dir) + ",\t\t\t" + str(bin(gradient_dir)) ))
 
@@ -131,12 +131,12 @@ class GradientDir:
                 #if gradient_norm != 0:
                     #print("gradient_norm: (" + str(row) + ", " + str(col) + "): " + str(gradient_norm))
 
-                ##pixel_descriptor = self._gradient_demux(gradient_dir, gradient_norm)
-                ##pixel_descriptor = self._bin_mixing(pixel_descriptor)
+                pixel_descriptor = self._gradient_demux(gradient_dir, gradient_norm)
+                pixel_descriptor = self._bin_mixing(pixel_descriptor)
                 #print("pixel_descriptor: " + str(pixel_descriptor))
 
-                pd = self._compute_and_combine_dir_and_demux_gradien(gradient_x, gradient_y, gradient_norm)
-                pixel_descriptor = pd.ravel().tolist()
+                #pd = self._compute_and_combine_dir_and_demux_gradien(gradient_x, gradient_y, gradient_norm)
+                #pixel_descriptor = pd.ravel().tolist()
 
                 pixel_descriptors[row][col] = np.asarray(pixel_descriptor)
 
@@ -530,7 +530,7 @@ def hog(image, orientations=9, pixels_per_cell=(8, 8), cells_per_block=(2, 2)):
                                    ]
 
             cell_feature_vector = np.reshape(cell_feature_vector, 36)
-            cell_feature_vector = sklearn.preprocessing.normalize([cell_feature_vector], norm='l2').ravel()
+            #cell_feature_vector = sklearn.preprocessing.normalize([cell_feature_vector], norm='l2').ravel()
 
             #print(cell_feature_vector)
 
@@ -538,13 +538,13 @@ def hog(image, orientations=9, pixels_per_cell=(8, 8), cells_per_block=(2, 2)):
 
     #print("Length of feature vector: " + str(len(feature_vector.tolist())))
 
-    return feature_vector.tolist()
+    return feature_vector
 
 
 if __name__ == "__main__":
 
-    #gradients = GradientDir()
-    #gradients.compare_implemenatation()
+    gradients = GradientDir()
+    gradients.compare_implemenatation()
 
 
 

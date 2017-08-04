@@ -1,9 +1,11 @@
+import pickle
+
+import matplotlib.pyplot as plt
+import skimage
 import skimage.data
 import skimage.feature
-import skimage
-import matplotlib.pyplot as plt
-import pickle
-import HOG_modified
+
+from HOG import HOG_modified
 
 #####################################
 # SET THE FOLLOWING PARAMETERS
@@ -81,15 +83,21 @@ def load_filenames_process_and_save_results(filename, flag_use_skimage_version):
     with open("data\\" + filename + output_filename_modifier + ".pickle", "wb") as f:
         pickle.dump(data, f)
 
+    return data
+
 
 if __name__ == "__main__":
 
-    load_filenames_process_and_save_results("positive_train_samples", True)
-    load_filenames_process_and_save_results("positive_test_samples", True)
-    load_filenames_process_and_save_results("negative_train_samples", True)
-    load_filenames_process_and_save_results("negative_test_samples", True)
+    #import numpy as np
 
+    #d = np.sort(load_filenames_process_and_save_results("positive_train_samples", True)[0])
+    # load_filenames_process_and_save_results("positive_test_samples", True)
+    # load_filenames_process_and_save_results("negative_train_samples", True)
+    # load_filenames_process_and_save_results("negative_test_samples", True)
+
+    #d_modified = np.sort(load_filenames_process_and_save_results("positive_train_samples", False)[0])
     load_filenames_process_and_save_results("positive_train_samples", False)
     load_filenames_process_and_save_results("positive_test_samples", False)
     load_filenames_process_and_save_results("negative_train_samples", False)
     load_filenames_process_and_save_results("negative_test_samples", False)
+
