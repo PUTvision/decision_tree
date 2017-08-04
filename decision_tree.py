@@ -6,8 +6,8 @@ from analyse_classifier import get_code
 
 from sklearn.externals.six import StringIO
 
-from Tree import Tree
-from Tree import RandomForest
+from tree import Tree
+from tree import RandomForest
 
 
 def visualize_tree(clf, filename):
@@ -211,10 +211,10 @@ if __name__ == "__main__":
     # SET THE FOLLOWING PARAMETERS
     # INRIA DATABASE FOR HOG (64x128)
     # total number of positive samples: 1126, but only 1100 can be used here
-    number_of_positive_samples = 600
-    number_of_positive_tests = 400
+    number_of_positive_samples = 900
+    number_of_positive_tests = 200
     # total number of negative train samples: 1218, but only 1200 can be used here
-    number_of_negative_samples = 1000
+    number_of_negative_samples = 1200
     # total number of negative test samples: 453, , but only 400 can be used here
     number_of_negative_tests = 400
     # END OF PARAMETERS SETTING

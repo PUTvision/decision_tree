@@ -1,15 +1,14 @@
 __author__ = 'Amin'
 
-import numpy as np
-import matplotlib.pyplot as plt
+import glob
+import pickle
+import random
 
+import matplotlib.pyplot as plt
+import numpy as np
 import skimage
 
-import glob
-import random
-import pickle
-
-import MF_lbp
+from LBP import MF_lbp
 
 
 def show_histograms(original_image, lbp_image, nr_of_image_bins, nr_of_lbp_bins):
