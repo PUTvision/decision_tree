@@ -1,3 +1,4 @@
+import abc
 import numpy as np
 import sklearn.tree
 
@@ -46,14 +47,11 @@ class Leaf:
             compare_values += str(compare_value) + ", "
         print(compare_values)
 
-from abc import ABCMeta, abstractmethod
-
 
 class VHDLcreator:
+    __metaclass__ = abc.ABCMeta
 
     def __init__(self, name):
-        __metaclass__ = ABCMeta
-
         self.current_indent = 0
 
         self.name = name
@@ -70,10 +68,17 @@ class VHDLcreator:
         self._filename_testbench = self.TESTBENCH_PREFIX + self.name + self.FILE_EXTENSION
         self._custom_type_name = self.name + "_t"
 
+        # TODO - maybe this part can be found automatically
+        # TODO - change to more general solution with more classes
+        self._number_of_bits_for_class_index = 32
+        # TODO - this part also should be changed to automatic version
+        self._number_of_bits_per_feature = 8
+        self._number_of_features = 64
+
     def _insert_text_line_with_indent(self, text_to_insert):
         text = ""
-        for i in range(0, self.current_indent):
-            text += "\t"
+        # apply current indent
+        text += "\t" * self.current_indent
         text += text_to_insert
         text += "\n"
         return text
@@ -85,14 +90,14 @@ class VHDLcreator:
         text += self._insert_text_line_with_indent("use IEEE.NUMERIC_STD.ALL;")
         text += self._insert_text_line_with_indent("")
 
-        text += self.add_additional_headers()
+        text += self._add_additional_headers()
         text += self._insert_text_line_with_indent("")
 
         return text
 
-    @abstractmethod
-    def add_additional_headers(self):
-        pass
+    @abc.abstractmethod
+    def _add_additional_headers(self):
+        return
 
     def _add_entity(self):
         text = ""
@@ -105,13 +110,13 @@ class VHDLcreator:
 
         return text
 
-    @abstractmethod
+    @abc.abstractmethod
     def _add_entity_generics_section(self):
-        pass
+        return
 
-    @abstractmethod
+    @abc.abstractmethod
     def _add_entity_port_section(self):
-        pass
+        return
 
     def _add_architecture(self):
         text = ""
@@ -140,17 +145,17 @@ class VHDLcreator:
 
         return text
 
-    @abstractmethod
+    @abc.abstractmethod
     def _add_architecture_component_section(self):
-        pass
+        return
 
-    @abstractmethod
+    @abc.abstractmethod
     def _add_architecture_signal_section(self):
-        pass
+        return
 
-    @abstractmethod
+    @abc.abstractmethod
     def _add_architecture_process_section(self):
-        pass
+        return
 
     def create_vhdl_file(self):
         # open file for writing
@@ -255,18 +260,18 @@ class Tree(VHDLcreator):
         self._preorder(tree.tree_, features, following_splits_IDs, following_splits_compare_values, 0)
 
     def predict(self, input_data):
-        choosen_class_index = [-1, -1]
+        # this code works in a similar way to how vhdl implementation of the tree works
 
+        chosen_class_index = [-1]
+        # first calculate all the comparisions
         compare_results = [None] * len(self.splits)
-
-        for split, i in zip(self.splits, range(0, len(self.splits))):
+        for i, split in enumerate(self.splits):
             if input_data[split.var_idx] <= split.value_to_compare:
                 compare_results[i] = 0
             else:
                 compare_results[i] = 1
 
-        #print(compare_results
-
+        # now go through all leaves and check if it following compare values are same as one calculated above
         for leaf in self.leaves:
             number_of_correct_results = 0
 
@@ -275,17 +280,14 @@ class Tree(VHDLcreator):
                 expected_result = leaf.following_split_compare_values[j]
                 real_result = compare_results[split_id]
 
-                #print("Expected result: ", expected_result, ", real result: ", real_result
-
                 if expected_result == real_result:
                     number_of_correct_results += 1
 
-            #print("Number of correct result: ", number_of_correct_results, ", should be: ", len(leaf.following_split_IDs)
-
             if number_of_correct_results == len(leaf.following_split_IDs):
-                choosen_class_index = leaf.class_idx
+                chosen_class_index = leaf.class_idx
 
-        chosen_class = np.argmax(choosen_class_index[0])
+        # find the most important class
+        chosen_class = np.argmax(chosen_class_index[0])
 
         return chosen_class
 
@@ -317,117 +319,7 @@ class Tree(VHDLcreator):
 
         return max(following_splits_number)
 
-    @staticmethod
-    def _insert_text_line_with_indent_old(text_to_insert, current_indent):
-        text = ""
-        for i in range(0, current_indent):
-            text += "\t"
-        text += text_to_insert
-        text += "\n"
-        return text
-
-    def create_vhdl_code_old(self, filename):
-        f = open(filename, 'w')
-
-        # create code for all compares done in splits
-        text = ""
-        current_indent = 0
-        text += self._insert_text_line_with_indent_old("compare : process(clk)", current_indent)
-        text += self._insert_text_line_with_indent_old("begin", current_indent)
-        current_indent += 1
-        text += self._insert_text_line_with_indent_old("if clk='1' and clk'event then", current_indent)
-        current_indent += 1
-        text += self._insert_text_line_with_indent_old("if rst='1' then", current_indent)
-        text += self._insert_text_line_with_indent_old("elsif en='1' then", current_indent)
-        current_indent += 1
-
-        # insert all splits
-        for (split, i) in zip(self.splits, range(0, len(self.splits))):
-            text += self._insert_text_line_with_indent_old(
-                "if unsigned(input(" +
-                str(split.var_idx) + ")) > to_unsigned(" +
-                str(int(split.value_to_compare)) +
-                ", input'length) then",
-                current_indent)
-
-            current_indent += 1
-            text += self._insert_text_line_with_indent_old("splitResult(" + str(i) + ") <= '1';", current_indent)
-            current_indent -= 1
-            text += self._insert_text_line_with_indent_old("else", current_indent)
-            current_indent += 1
-            text += self._insert_text_line_with_indent_old("splitResult(" + str(i) + ") <= '0';", current_indent)
-            current_indent -= 1
-            text += self._insert_text_line_with_indent_old("end if;", current_indent)
-
-        current_indent -= 1
-        text += self._insert_text_line_with_indent_old("end if;", current_indent)
-        current_indent -= 1
-        text += self._insert_text_line_with_indent_old("end if;", current_indent)
-        current_indent -= 1
-        text += self._insert_text_line_with_indent_old("end process compare;", current_indent)
-        text += self._insert_text_line_with_indent_old("", current_indent)
-
-        f.write(text)
-
-        text = ""
-        current_indent = 0
-
-        # create code for all the leaves
-        text += self._insert_text_line_with_indent_old("decideClass : process(clk)", current_indent)
-        text += self._insert_text_line_with_indent_old("begin", current_indent)
-        current_indent += 1
-        text += self._insert_text_line_with_indent_old("if clk='1' and clk'event then", current_indent)
-        current_indent += 1
-        text += self._insert_text_line_with_indent_old("if rst='1' then", current_indent)
-        text += self._insert_text_line_with_indent_old("", current_indent)
-        text += self._insert_text_line_with_indent_old("elsif en='1' then", current_indent)
-        current_indent += 1
-
-        for leaf in self.leaves:
-
-            text += self._insert_text_line_with_indent_old("if ( ", current_indent)
-            current_indent += 1
-
-            for split_id, split_compare_value in zip(leaf.following_split_IDs, leaf.following_split_compare_values):
-
-                text += self._insert_text_line_with_indent_old(
-                    "splitResult(" + str(split_id) + ") = '" + str(split_compare_value) + "'", current_indent)
-
-                if split_id != leaf.following_split_IDs[-1]:
-                    #if(j < currentLeaf->listOfFollowingSplitsIDs.size()-1)
-                    text += self._insert_text_line_with_indent_old("and", current_indent)
-                else:
-                    text += self._insert_text_line_with_indent_old(" ) then", current_indent)
-                    current_indent += 1
-
-                    result = leaf.class_idx
-
-                    if result[0][0] > result[0][1]:
-                        result_as_class = 0
-                    else:
-                        result_as_class = 1
-
-                    text += self._insert_text_line_with_indent_old("classIndex <= to_unsigned(" + str(result_as_class) + ", classIndex'length);", current_indent)
-                    #// earlier version
-                    #//myfile << "\t\t\t\toutput(" << i << ") <= '1';" << endl;
-                    #//myfile << "\t\t\telse" << endl;
-                    #//myfile << "\t\t\t\toutput(" << i << ") <= '0';" << endl;
-                    current_indent -= 1
-                    text += self._insert_text_line_with_indent_old("end if;", current_indent)
-            current_indent -= 1
-
-
-        current_indent -= 1
-        text += self._insert_text_line_with_indent_old("end if;", current_indent)
-        current_indent -= 1
-        text += self._insert_text_line_with_indent_old("end if;", current_indent)
-        current_indent -= 1
-        text += self._insert_text_line_with_indent_old("end process decideClass;", current_indent)
-        f.write(text)
-
-        f.close()
-
-    def add_additional_headers(self):
+    def _add_additional_headers(self):
         text = ""
         return text
 
@@ -450,12 +342,13 @@ class Tree(VHDLcreator):
         text += self._insert_text_line_with_indent("en" + "\t\t\t\t" + ":" + "\t" + "in std_logic;")
 
         # input aggregated to one long std_logic_vector
-        # TODO - calc the input vector size automatically
         text += self._insert_text_line_with_indent("input" + "\t\t\t" + ":" + "\t" + "in std_logic_vector("
-                                                   + str(6000*8) + "-1 downto 0);")
-        # output is 0-1 at the moment
-        # TODO - change to more general solution with more classes
-        text += self._insert_text_line_with_indent("output" + "\t\t\t" + ":" + "\t" + "out std_logic")
+                                                   + str(self._number_of_features*self._number_of_bits_per_feature)
+                                                   + "-1 downto 0);")
+
+        text += self._insert_text_line_with_indent("output" + "\t\t\t" + ":" + "\t" + "out std_logic_vector("
+                                                   + str(self._number_of_bits_for_class_index)
+                                                   + "-1 downto 0)")
 
         self.current_indent -= 1
 
@@ -472,12 +365,19 @@ class Tree(VHDLcreator):
     def _add_architecture_signal_section(self):
         text = ""
 
-        # TODO - maybe add a function for creating signals?
+        text += self._insert_text_line_with_indent("type " + "features_t" + "\t" + "is array("
+                                                   + str(self._number_of_features) + "-1 downto 0)"
+                                                   + " of std_logic_vector(" + str(self._number_of_bits_per_feature)
+                                                   + "-1 downto 0);")
+
+        text += self._insert_text_line_with_indent("signal " + "features" + "\t\t:\t" + "features_t"
+                                                   + "\t\t\t" + ":= (others=>(others=>'0'));")
+
         text += self._insert_text_line_with_indent("signal " + "splitResult" + "\t:\t" + "std_logic_vector("
                                                    + str(len(self.splits)) + "-1 downto 0)"
                                                    + "\t\t\t" + ":= (others=>'0');")
-        text += self._insert_text_line_with_indent("signal " + "classIndex" + "\t:\t" + "std_logic_vector("
-                                                   + str(1) + "-1 downto 0)"
+        text += self._insert_text_line_with_indent("signal " + "classIndex" + "\t:\t" + "unsigned("
+                                                   + str(self._number_of_bits_for_class_index) + "-1 downto 0)"
                                                    + "\t\t\t" + ":= (others=>'0');")
 
         text += self._insert_text_line_with_indent("")
@@ -487,10 +387,21 @@ class Tree(VHDLcreator):
     def _add_architecture_process_section(self):
         text = ""
 
+        text += self._add_architecture_input_mapping()
         text += self._add_architecture_process_compare()
         text += self._add_architecture_process_decideClass()
-        text += self._insert_text_line_with_indent("output <= std_logic_vector(classIndex)")
+        text += self._insert_text_line_with_indent("output <= std_logic_vector(classIndex);")
         text += self._insert_text_line_with_indent("")
+
+        return text
+
+    def _add_architecture_input_mapping(self):
+        text = ""
+
+        for i in range(0, self._number_of_features):
+            text += self._insert_text_line_with_indent("features(" + str(i) + ") <= input("
+                                                       + str(self._number_of_bits_per_feature*(i+1)-1) + " downto "
+                                                       + str(self._number_of_bits_per_feature*i) + ");")
 
         return text
 
@@ -510,10 +421,10 @@ class Tree(VHDLcreator):
         # insert all splits
         for (split, i) in zip(self.splits, range(0, len(self.splits))):
             text += self._insert_text_line_with_indent(
-                "if unsigned(input(" +
-                str(split.var_idx) + ")) > to_unsigned(" +
+                "if unsigned(features(" +
+                str(split.var_idx) + ")) <= to_unsigned(" +
                 str(int(split.value_to_compare)) +
-                ", input'length) then")
+                ", features'length) then")
 
             self.current_indent += 1
             text += self._insert_text_line_with_indent("splitResult(" + str(i) + ") <= '1';")
@@ -566,10 +477,8 @@ class Tree(VHDLcreator):
 
                     result = leaf.class_idx
 
-                    if result[0][0] > result[0][1]:
-                        result_as_class = 0
-                    else:
-                        result_as_class = 1
+                    # find the most important class
+                    result_as_class = np.argmax(result[0])
 
                     text += self._insert_text_line_with_indent("classIndex <= to_unsigned(" + str(result_as_class) + ", classIndex'length);")
                     self.current_indent -= 1
