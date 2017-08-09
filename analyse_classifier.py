@@ -1,68 +1,47 @@
-__author__ = 'Amin'
+from sklearn.tree import _tree
 
 # http://stackoverflow.com/questions/20224526/how-to-extract-the-decision-rules-from-scikit-learn-decision-tree
 
-import numpy as np
 
+def tree_to_code(tree, feature_names):
+    tree_ = tree.tree_
+    feature_name = [
+        feature_names[i] if i != _tree.TREE_UNDEFINED else "undefined!"
+        for i in tree_.feature
+    ]
+    print("def tree({}):".format(", ".join(feature_names)))
 
-def get_code(tree, feature_names):
-    left      = tree.tree_.children_left
-    right     = tree.tree_.children_right
-    threshold = tree.tree_.threshold
-    features  = [feature_names[i] for i in tree.tree_.feature]
-    value = tree.tree_.value
-
-    def recurse(left, right, threshold, features, node):
-        if (threshold[node] != -2):
-            print("if ( " + features[node] + " <= " + str(threshold[node]) + " ) {")
-            if left[node] != -1:
-                recurse (left, right, threshold, features,left[node])
-            print("} else {")
-            if right[node] != -1:
-                recurse(left, right, threshold, features,right[node])
-            print("}")
+    def recurse(node, depth):
+        indent = "  " * depth
+        if tree_.feature[node] != _tree.TREE_UNDEFINED:
+            name = feature_name[node]
+            threshold = tree_.threshold[node]
+            print("{}if feature[{}] <= {}:".format(indent, name, threshold))
+            recurse(tree_.children_left[node], depth + 1)
+            print("{}else:  # if {} > {}".format(indent, name, threshold))
+            recurse(tree_.children_right[node], depth + 1)
         else:
-            print("return " + str(value[node]))
+            print("{}return {}".format(indent, tree_.value[node]))
 
-    recurse(left, right, threshold, features, 0)
+    recurse(0, 1)
 
-
-def get_lineage(tree, feature_names):
-    left      = tree.tree_.children_left
-    right     = tree.tree_.children_right
-    threshold = tree.tree_.threshold
-    features  = [feature_names[i] for i in tree.tree_.feature]
-
-    # get ids of child nodes
-    idx = np.argwhere(left == -1)[:,0]
-
-    def recurse(left, right, child, lineage=None):
-        if lineage is None:
-            lineage = [child]
-        if child in left:
-            parent = np.where(left == child)[0].item()
-            split = 'l'
-        else:
-            parent = np.where(right == child)[0].item()
-            split = 'r'
-
-        lineage.append((parent, split, threshold[parent], features[parent]))
-
-        if parent == 0:
-            lineage.reverse()
-            return lineage
-        else:
-            return recurse(left, right, parent, lineage)
-
-    for child in idx:
-        for node in recurse(left, right, child):
-            print(node)
 
 if __name__ == "__main__":
-    # sample usage for random forest classifier to show first tree
-    #get_lineage(classifier.estimators_[0], list_of_input_value_names)
-    #get_code(classifier.estimators_[0], list_of_input_value_names)
+    import sklearn.datasets
 
-    #get_lineage(classifier, list_of_input_value_names)
-    #get_code(classifier, list_of_input_value_names)
-    pass
+    digits = sklearn.datasets.load_digits()
+    data = digits.data.reshape((len(digits.images), -1))
+
+    from sklearn.tree import DecisionTreeClassifier
+    clf = DecisionTreeClassifier()
+    clf.fit(data, digits.target)
+
+    feature_names = []
+    for i in range(64):
+        feature_names.append(str(i))
+
+    tree_to_code(clf, feature_names)
+
+    # for random forest classifier use the abov function for each tree
+    # sample for first tree:
+    # tree_to_code(clf.estimators_[0], feature_names)

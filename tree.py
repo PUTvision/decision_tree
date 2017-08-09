@@ -1,4 +1,5 @@
-__author__ = 'Amin'
+import numpy as np
+import sklearn.tree
 
 
 class Split:
@@ -246,14 +247,12 @@ class Tree(VHDLcreator):
         following_splits_IDs = []
         following_splits_compare_values = []
 
-        features = [feature_names[i] for i in tree.tree_.feature]
+        features = [
+            feature_names[i] if i != sklearn.tree._tree.TREE_UNDEFINED else "undefined!"
+            for i in tree.tree_.feature
+        ]
 
-        left = tree.tree_.children_left
-        right = tree.tree_.children_right
-        threshold = tree.tree_.threshold
-        value = tree.tree_.value
-
-        self._preorder(left, right, threshold, value, features, following_splits_IDs, following_splits_compare_values, 0)
+        self._preorder(tree.tree_, features, following_splits_IDs, following_splits_compare_values, 0)
 
     def predict(self, input_data):
         choosen_class_index = [-1, -1]
@@ -286,11 +285,7 @@ class Tree(VHDLcreator):
             if number_of_correct_results == len(leaf.following_split_IDs):
                 choosen_class_index = leaf.class_idx
 
-        # TODO - make this fragment universal (to work for more than two classes)
-        if choosen_class_index[0][0] > choosen_class_index[0][1]:
-            chosen_class = 0
-        else:
-            chosen_class = 1
+        chosen_class = np.argmax(choosen_class_index[0])
 
         return chosen_class
 
@@ -600,48 +595,42 @@ class Tree(VHDLcreator):
         self.splits.append(new_split)
         self._current_split_index += 1
 
-    def _preorder(self, left, right, threshold, value, features, following_splits_IDs, following_splits_compare_values, node):
+    def _preorder(self, tree_, features, following_splits_IDs, following_splits_compare_values, node):
 
-        if threshold[node] != -2:
+        if tree_.feature[node] != sklearn.tree._tree.TREE_UNDEFINED:
             following_splits_IDs.append(self._current_split_index)
 
             self._add_new_split(
                 self._current_split_index,
                 features[node],
-                threshold[node]
+                tree_.threshold[node]
             )
 
             following_splits_compare_values.append(0)
 
             self._preorder(
-                left,
-                right,
-                threshold,
-                value,
+                tree_,
                 features,
                 list(following_splits_IDs),
                 list(following_splits_compare_values),
-                left[node]
+                tree_.children_left[node]
             )
 
             following_splits_compare_values.pop()
             following_splits_compare_values.append(1)
 
             self._preorder(
-                left,
-                right,
-                threshold,
-                value,
+                tree_,
                 features,
                 list(following_splits_IDs),
                 list(following_splits_compare_values),
-                right[node]
+                tree_.children_right[node]
             )
 
         else:
             self._add_new_leaf(
                 self._current_leaf_index,
-                value[node],
+                tree_.value[node],
                 following_splits_IDs,
                 following_splits_compare_values
             )
