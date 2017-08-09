@@ -1,5 +1,7 @@
 from sklearn import datasets
 from sklearn import svm, metrics
+from sklearn.tree import DecisionTreeClassifier
+from sklearn.ensemble import RandomForestClassifier
 
 import matplotlib.pyplot as plt
 
@@ -58,7 +60,7 @@ def sample_from_scikit(classifier):
         plt.imshow(image, cmap=plt.cm.gray_r, interpolation='nearest')
         plt.title('Prediction: %i' % prediction)
 
-    plt.show()
+    #plt.show()
 
 
 def mnist_processing(clf, dataset):
@@ -91,21 +93,8 @@ def mnist_processing(clf, dataset):
     print("Confusion matrix:\n%s" % metrics.confusion_matrix(expected, predicted))
 
 
-
-if __name__ == "__main__":
-    from sklearn.tree import DecisionTreeClassifier
-    # clf = DecisionTreeClassifier()#max_depth=50)
-    # sample_from_scikit(clf)
-    #
-    from sklearn.ensemble import RandomForestClassifier
-    # sample_from_scikit(clf)
-    #
-    # # Create a classifier: a support vector classifier
-    clf = svm.SVC(gamma=0.001)
-    # sample_from_scikit(clf)
-
+def load_and_compare_datasets():
     from sklearn.datasets import fetch_mldata
-
     mnist = fetch_mldata('MNIST original', data_home=".//data//MNIST//")
     print(mnist.data.shape)
     print(mnist.target.shape)
@@ -117,23 +106,50 @@ if __name__ == "__main__":
     print(np.unique(digits.target))
     print(len(digits.images))
 
+    return mnist, digits
 
 
-    clf = DecisionTreeClassifier()  # max_depth=50)
-    #clf = RandomForestClassifier(n_estimators=10)
+if __name__ == "__main__":
 
-    mnist_processing(clf, mnist)
+    #clf = DecisionTreeClassifier()#max_depth=50)
+    #clf = svm.SVC(gamma=0.001)
+    clf = RandomForestClassifier(n_estimators=10)
 
-    from tree import Tree
+    sample_from_scikit(clf)
 
-    my_classifier = Tree()
+    mnist, digits = load_and_compare_datasets()
+    #mnist_processing(clf, mnist)
 
     list_of_input_value_names = []
-    for i in range(0, 10):
+    for i in range(0, 64):
         list_of_input_value_names.append(i)
+
+    #from tree import Tree
+    #my_classifier = Tree("TreeTest", len(list_of_input_value_names))
+
+    from tree import RandomForest
+    my_classifier = RandomForest(len(list_of_input_value_names))
+
     my_classifier.build(clf, list_of_input_value_names)
 
     my_classifier.print_parameters()
 
+    # from analyse_classifier import tree_to_code
+    # feature_names = []
+    # for i in range(64):
+    #     feature_names.append(str(i))
+    # tree_to_code(clf, feature_names)
 
-    #sample_from_scikit(clf, mnist)
+    n_samples = len(digits.images)
+    data = digits.data.reshape((n_samples, -1))
+
+    for digit in data[n_samples // 2:n_samples // 2+10]:
+        scikit_learn_result = clf.predict([digit])
+        my_result = my_classifier.predict(digit)
+
+        if scikit_learn_result != my_result:
+            print("Error!")
+            print(scikit_learn_result)
+            print(my_result)
+
+    my_classifier.create_vhdl_file()

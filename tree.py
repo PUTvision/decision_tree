@@ -48,10 +48,12 @@ class Leaf:
         print(compare_values)
 
 
+# TODO: add possibility to change how many bits are used for each feature
+
 class VHDLcreator:
     __metaclass__ = abc.ABCMeta
 
-    def __init__(self, name):
+    def __init__(self, name: str, number_of_features: int):
         self.current_indent = 0
 
         self.name = name
@@ -69,11 +71,10 @@ class VHDLcreator:
         self._custom_type_name = self.name + "_t"
 
         # TODO - maybe this part can be found automatically
-        # TODO - change to more general solution with more classes
         self._number_of_bits_for_class_index = 32
         # TODO - this part also should be changed to automatic version
         self._number_of_bits_per_feature = 8
-        self._number_of_features = 64
+        self._number_of_features = number_of_features
 
     def _insert_text_line_with_indent(self, text_to_insert):
         text = ""
@@ -173,29 +174,28 @@ class VHDLcreator:
 
 class RandomForest(VHDLcreator):
 
-    def __init__(self):
+    def __init__(self, number_of_features: int):
         self.random_forest = []
 
-        VHDLcreator.__init__(self, "RandomForestTest")
+        VHDLcreator.__init__(self, "RandomForestTest", number_of_features)
 
     def build(self, random_forest, feature_names):
-        for tree in random_forest.estimators_:
-            tree_builder = Tree()
+        for i, tree in enumerate(random_forest.estimators_):
+            tree_builder = Tree("tree_" + str(i), self._number_of_features)
             tree_builder.build(tree, feature_names)
 
             self.random_forest.append(tree_builder)
 
     def predict(self, input_data):
-        # TODO - make this fragment universal (to work for more than two classes)
-        results = [0, 0]
+        results = {}
         for tree in self.random_forest:
             tree_result = tree.predict(input_data)
-            results[int(tree_result)] += 1
+            if tree_result in results:
+                results[tree_result] += 1
+            else:
+                results[tree_result] = 1
 
-        if results[0] >= results[1]:
-            chosen_class = 0
-        else:
-            chosen_class = 1
+        chosen_class = max(results, key=results.get)
 
         return chosen_class
 
@@ -203,10 +203,7 @@ class RandomForest(VHDLcreator):
         for tree in self.random_forest:
             tree.print_parameters()
 
-    def create_vhdl_code_old(self, filename):
-        self.create_vhdl_file()
-
-    def add_additional_headers(self):
+    def _add_additional_headers(self):
         text = ""
         return text
 
@@ -233,14 +230,14 @@ class RandomForest(VHDLcreator):
 
 class Tree(VHDLcreator):
 
-    def __init__(self):
+    def __init__(self, name: str, number_of_features: int):
         self._current_split_index = 0
         self._current_leaf_index = 0
 
         self.splits = []
         self.leaves = []
 
-        VHDLcreator.__init__(self, "TreeTest")
+        VHDLcreator.__init__(self, name, number_of_features)
 
     def build(self, tree, feature_names):
         self._current_split_index = 0
