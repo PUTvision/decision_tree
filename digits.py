@@ -1,3 +1,6 @@
+
+import numpy as np
+
 from sklearn import datasets
 from sklearn import svm, metrics
 from sklearn.tree import DecisionTreeClassifier
@@ -5,21 +8,8 @@ from sklearn.ensemble import RandomForestClassifier
 
 import matplotlib.pyplot as plt
 
-import numpy as np
 
-
-def simple_test():
-    # Load the digits dataset
-    digits = datasets.load_digits()
-    print(digits.data.shape)
-
-    # Display the first digit
-    plt.figure(1, figsize=(5, 5))
-    plt.imshow(digits.images[-1], cmap=plt.cm.gray_r, interpolation='nearest')
-    plt.show()
-
-
-def sample_from_scikit(classifier):
+def sample_from_scikit():
     # The digits dataset
     digits = datasets.load_digits()
 
@@ -43,6 +33,7 @@ def sample_from_scikit(classifier):
     data = digits.data.reshape((n_samples, -1))
 
     # We learn the digits on the first half of the digits
+    classifier = svm.SVC(gamma=0.001)
     classifier.fit(data[:n_samples // 2], digits.target[:n_samples // 2])
 
     # Now predict the value of the digit on the second half:
@@ -60,96 +51,87 @@ def sample_from_scikit(classifier):
         plt.imshow(image, cmap=plt.cm.gray_r, interpolation='nearest')
         plt.title('Prediction: %i' % prediction)
 
-    #plt.show()
+    plt.show()
 
 
-def mnist_processing(clf, dataset):
-    train_samples = 60000
-    test_samples = 10000
-
-    data_target = list(zip(dataset.data[:60000], dataset.target[:60000]))
-    import random
-    random.shuffle(data_target)
-
-    d, t = zip(*data_target)
-
-    train_data = np.array(d[:train_samples]).reshape((train_samples, -1))
-    print(len(train_data))
-    train_target = np.array(t[:train_samples])
-    print(len(train_target))
-
-    test_data = dataset.data[-test_samples:].reshape((test_samples, -1))
-    print(len(test_data))
-    test_target = dataset.target[-test_samples:]
-    print(len(test_target))
-
-    clf.fit(train_data, train_target)
-
-    predicted = clf.predict(test_data)
-    expected = test_target
-
+def report_classifier(clf, expected, predicted):
     print("Classification report for classifier %s:\n%s\n"
           % (clf, metrics.classification_report(expected, predicted)))
     print("Confusion matrix:\n%s" % metrics.confusion_matrix(expected, predicted))
 
 
-def load_and_compare_datasets():
-    from sklearn.datasets import fetch_mldata
-    mnist = fetch_mldata('MNIST original', data_home=".//data//MNIST//")
-    print(mnist.data.shape)
-    print(mnist.target.shape)
-    print(np.unique(mnist.target))
+def compare_with_own_classifier(scikit_clf, own_clf, test_data):
+    flag_no_errors = True
+    number_of_errors = 0
+    for sample in test_data:
+        scikit_result = scikit_clf.predict([sample])
+        my_result = own_clf.predict(sample)
+
+        if scikit_result != my_result:
+            print("Error!")
+            print(scikit_result)
+            print(my_result)
+            number_of_errors += 1
+            flag_no_errors = False
+
+    if flag_no_errors:
+        print("All results were the same")
+    else:
+        print("Number of errors: " + str(number_of_errors))
+
+if __name__ == "__main__":
+    # sample_from_scikit()
 
     digits = datasets.load_digits()
     print(digits.data.shape)
     print(digits.target.shape)
     print(np.unique(digits.target))
-    print(len(digits.images))
 
-    return mnist, digits
+    # data has to be flatten (8x8 image -> 64x1 matrix)
+    data = digits.data.reshape((len(digits.data), -1))
+    print(len(data))
 
+    #####################################
+    # SET THE FOLLOWING PARAMETERS
+    # DIGITS DATABASE
+    # total number of samples: 1797
+    number_of_train_samples = 1200
+    number_of_test_samples = 597
+    # END OF PARAMETERS SETTING
+    #####################################
 
-if __name__ == "__main__":
+    # sanity check
+    if (number_of_train_samples + number_of_test_samples) > len(digits.data):
+        print("ERROR, too much samples set!")
 
-    #clf = DecisionTreeClassifier()#max_depth=50)
-    #clf = svm.SVC(gamma=0.001)
-    clf = RandomForestClassifier(n_estimators=10)
+    train_data = data[:number_of_train_samples]
+    train_target = digits.target[:number_of_train_samples]
+    test_data = data[number_of_train_samples:]
+    test_target = digits.target[number_of_train_samples:]
 
-    sample_from_scikit(clf)
+    clf_decision_tree = DecisionTreeClassifier()#max_depth=50)
+    clf_decision_tree.fit(train_data, train_target)
+    test_predicted = clf_decision_tree.predict(test_data)
+    report_classifier(clf_decision_tree, test_target, test_predicted)
 
-    mnist, digits = load_and_compare_datasets()
-    #mnist_processing(clf, mnist)
+    from tree import Tree
+    my_clf_decision_tree = Tree("TreeTest", digits.data.shape[1])
+    my_clf_decision_tree.build(clf_decision_tree)
+    my_clf_decision_tree.print_parameters()
+    my_clf_decision_tree.create_vhdl_file()
 
-    list_of_input_value_names = []
-    for i in range(0, 64):
-        list_of_input_value_names.append(i)
+    compare_with_own_classifier(clf_decision_tree, my_clf_decision_tree, test_data)
 
-    #from tree import Tree
-    #my_classifier = Tree("TreeTest", len(list_of_input_value_names))
+    clf_random_forest = RandomForestClassifier()#n_estimators=10
+    clf_random_forest.fit(train_data, train_target)
+    test_predicted = clf_random_forest.predict(test_data)
+    report_classifier(clf_decision_tree, test_target, test_predicted)
 
     from tree import RandomForest
-    my_classifier = RandomForest(len(list_of_input_value_names))
+    my_clf_random_forest = RandomForest(digits.data.shape[1])
+    my_clf_random_forest.build(clf_random_forest)
+    my_clf_random_forest.print_parameters()
+    my_clf_random_forest.create_vhdl_file()
 
-    my_classifier.build(clf, list_of_input_value_names)
-
-    my_classifier.print_parameters()
-
-    # from analyse_classifier import tree_to_code
-    # feature_names = []
-    # for i in range(64):
-    #     feature_names.append(str(i))
-    # tree_to_code(clf, feature_names)
-
-    n_samples = len(digits.images)
-    data = digits.data.reshape((n_samples, -1))
-
-    for digit in data[n_samples // 2:n_samples // 2+10]:
-        scikit_learn_result = clf.predict([digit])
-        my_result = my_classifier.predict(digit)
-
-        if scikit_learn_result != my_result:
-            print("Error!")
-            print(scikit_learn_result)
-            print(my_result)
-
-    my_classifier.create_vhdl_file()
+    # TODO - there are errors in classification!!! Check it
+    compare_with_own_classifier(clf_random_forest, my_clf_random_forest, test_data)

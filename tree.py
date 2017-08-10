@@ -179,10 +179,10 @@ class RandomForest(VHDLcreator):
 
         VHDLcreator.__init__(self, "RandomForestTest", number_of_features)
 
-    def build(self, random_forest, feature_names):
+    def build(self, random_forest):
         for i, tree in enumerate(random_forest.estimators_):
             tree_builder = Tree("tree_" + str(i), self._number_of_features)
-            tree_builder.build(tree, feature_names)
+            tree_builder.build(tree)
 
             self.random_forest.append(tree_builder)
 
@@ -239,7 +239,7 @@ class Tree(VHDLcreator):
 
         VHDLcreator.__init__(self, name, number_of_features)
 
-    def build(self, tree, feature_names):
+    def build(self, tree):
         self._current_split_index = 0
         self._current_leaf_index = 0
 
@@ -249,8 +249,12 @@ class Tree(VHDLcreator):
         following_splits_IDs = []
         following_splits_compare_values = []
 
+        features_names = []
+        for i in range(0, self._number_of_features):
+            features_names.append(i)
+
         features = [
-            feature_names[i] if i != sklearn.tree._tree.TREE_UNDEFINED else "undefined!"
+            features_names[i] if i != sklearn.tree._tree.TREE_UNDEFINED else "undefined!"
             for i in tree.tree_.feature
         ]
 
