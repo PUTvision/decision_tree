@@ -3,10 +3,10 @@ import numpy as np
 
 from sklearn import datasets
 from sklearn import svm, metrics
-from sklearn.tree import DecisionTreeClassifier
-from sklearn.ensemble import RandomForestClassifier
 
 import matplotlib.pyplot as plt
+
+from dataset_tester import test_dataset
 
 
 def sample_from_scikit():
@@ -53,32 +53,6 @@ def sample_from_scikit():
 
     plt.show()
 
-
-def report_classifier(clf, expected, predicted):
-    print("Classification report for classifier %s:\n%s\n"
-          % (clf, metrics.classification_report(expected, predicted)))
-    print("Confusion matrix:\n%s" % metrics.confusion_matrix(expected, predicted))
-
-
-def compare_with_own_classifier(scikit_clf, own_clf, test_data):
-    flag_no_errors = True
-    number_of_errors = 0
-    for sample in test_data:
-        scikit_result = scikit_clf.predict([sample])
-        my_result = own_clf.predict(sample)
-
-        if scikit_result != my_result:
-            print("Error!")
-            print(scikit_result)
-            print(my_result)
-            number_of_errors += 1
-            flag_no_errors = False
-
-    if flag_no_errors:
-        print("All results were the same")
-    else:
-        print("Number of errors: " + str(number_of_errors))
-
 if __name__ == "__main__":
     # sample_from_scikit()
 
@@ -94,44 +68,18 @@ if __name__ == "__main__":
     #####################################
     # SET THE FOLLOWING PARAMETERS
     # DIGITS DATABASE
-    # total number of samples: 1797
+    # total number of samples: 1797 (each is 8x8)
     number_of_train_samples = 1200
-    number_of_test_samples = 597
+    number_of_test_samples = 1797 - number_of_train_samples
     # END OF PARAMETERS SETTING
-    #####################################
-
     # sanity check
     if (number_of_train_samples + number_of_test_samples) > len(digits.data):
         print("ERROR, too much samples set!")
+    #####################################
 
     train_data = data[:number_of_train_samples]
     train_target = digits.target[:number_of_train_samples]
-    test_data = data[number_of_train_samples:]
-    test_target = digits.target[number_of_train_samples:]
+    test_data = data[number_of_train_samples:number_of_train_samples+number_of_test_samples]
+    test_target = digits.target[number_of_train_samples:number_of_train_samples+number_of_test_samples]
 
-    clf_decision_tree = DecisionTreeClassifier()#max_depth=50)
-    clf_decision_tree.fit(train_data, train_target)
-    test_predicted = clf_decision_tree.predict(test_data)
-    report_classifier(clf_decision_tree, test_target, test_predicted)
-
-    from tree import Tree
-    my_clf_decision_tree = Tree("TreeTest", digits.data.shape[1])
-    my_clf_decision_tree.build(clf_decision_tree)
-    my_clf_decision_tree.print_parameters()
-    my_clf_decision_tree.create_vhdl_file()
-
-    compare_with_own_classifier(clf_decision_tree, my_clf_decision_tree, test_data)
-
-    clf_random_forest = RandomForestClassifier()#n_estimators=10
-    clf_random_forest.fit(train_data, train_target)
-    test_predicted = clf_random_forest.predict(test_data)
-    report_classifier(clf_decision_tree, test_target, test_predicted)
-
-    from tree import RandomForest
-    my_clf_random_forest = RandomForest(digits.data.shape[1])
-    my_clf_random_forest.build(clf_random_forest)
-    my_clf_random_forest.print_parameters()
-    my_clf_random_forest.create_vhdl_file()
-
-    # TODO - there are errors in classification!!! Check it
-    compare_with_own_classifier(clf_random_forest, my_clf_random_forest, test_data)
+    test_dataset(digits.data.shape[1], train_data, train_target, test_data, test_target)

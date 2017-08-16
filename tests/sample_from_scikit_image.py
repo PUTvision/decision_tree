@@ -1,11 +1,12 @@
-from __future__ import print_function
 import numpy as np
 import matplotlib.pyplot as plt
 
-from skimage.transform import rotate
 from skimage.feature import local_binary_pattern
 from skimage import data
 from skimage.color import label2rgb
+
+# sample code for LBP from:
+# http://scikit-image.org/docs/dev/auto_examples/features_detection/plot_local_binary_pattern.html
 
 METHOD = 'uniform'
 plt.rcParams['font.size'] = 9
@@ -25,14 +26,15 @@ def highlight_bars(bars, indexes):
         bars[i].set_facecolor('r')
 
 
-image = data.camera()
+image = data.load('brick.png')
 lbp = local_binary_pattern(image, n_points, radius, METHOD)
 
 
 def hist(ax, lbp):
-    n_bins = lbp.max() + 1
+    n_bins = int(lbp.max() + 1)
     return ax.hist(lbp.ravel(), normed=True, bins=n_bins, range=(0, n_bins),
                    facecolor='0.5')
+
 
 # plot histograms of LBP of textures
 fig, (ax_img, ax_hist) = plt.subplots(nrows=2, ncols=3, figsize=(9, 6))
