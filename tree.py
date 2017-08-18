@@ -187,15 +187,28 @@ class RandomForest(VHDLcreator):
             self.random_forest.append(tree_builder)
 
     def predict(self, input_data):
+        # first create a dictionary that will store the results
         results = {}
         for tree in self.random_forest:
+            # get the result form one of the tree and add it to appropriate element in dict
             tree_result = tree.predict(input_data)
             if tree_result in results:
                 results[tree_result] += 1
             else:
                 results[tree_result] = 1
 
-        chosen_class = max(results, key=results.get)
+        # IMPORTANT - following operations are required to make sure that the result is the same as obtained from scikit
+        # the problem (class name, number of votes):
+        # 0: 5, 1: 0, 2: 1, 3: 5
+        # scikit result - 0 (even though 0 and 3 have the same number of votes)
+        # my result - it depends on which value was presented first, so it can be 0 or 3
+
+        # find maximal value
+        max_value = max(results.values())
+        # and use it to get all pairs that are equal
+        max_result = [(key, value) for key, value in results.items() if value == max_value]
+        # at the end get element with the lowest key value
+        chosen_class = min(max_result, key=lambda t: t[0])[0]
 
         return chosen_class
 

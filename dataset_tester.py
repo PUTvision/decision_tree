@@ -57,5 +57,4 @@ def test_dataset(number_of_classes: int, train_data: np.ndarray, train_target: n
     my_clf_random_forest.print_parameters()
     my_clf_random_forest.create_vhdl_file()
 
-    # TODO - there are errors in classification!!! Check it
     compare_with_own_classifier(clf_random_forest, my_clf_random_forest, test_data)
