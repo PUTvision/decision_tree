@@ -48,12 +48,15 @@ class Leaf:
         print(compare_values)
 
 
-# TODO: add possibility to change how many bits are used for each feature
+# TODO: while the tree structure takes into account the number of bits used for compare values...
+# TODO cont: ... it is not implemented in vhdl conversion
+
+# TODO add code that retrains the network on already limited representation
 
 class VHDLcreator:
     __metaclass__ = abc.ABCMeta
 
-    def __init__(self, name: str, number_of_features: int):
+    def __init__(self, name: str, number_of_features: int, number_of_bits_per_feature: int):
         self.current_indent = 0
 
         self.name = name
@@ -72,8 +75,7 @@ class VHDLcreator:
 
         # TODO - maybe this part can be found automatically
         self._number_of_bits_for_class_index = 32
-        # TODO - this part also should be changed to automatic version
-        self._number_of_bits_per_feature = 8
+        self._number_of_bits_per_feature = number_of_bits_per_feature
         self._number_of_features = number_of_features
 
     def _insert_text_line_with_indent(self, text_to_insert):
@@ -174,14 +176,14 @@ class VHDLcreator:
 
 class RandomForest(VHDLcreator):
 
-    def __init__(self, number_of_features: int):
+    def __init__(self, number_of_features: int, number_of_bits_per_feature: int):
         self.random_forest = []
 
-        VHDLcreator.__init__(self, "RandomForestTest", number_of_features)
+        VHDLcreator.__init__(self, "RandomForestTest", number_of_features, number_of_bits_per_feature)
 
     def build(self, random_forest):
         for i, tree in enumerate(random_forest.estimators_):
-            tree_builder = Tree("tree_" + str(i), self._number_of_features)
+            tree_builder = Tree("tree_" + str(i), self._number_of_features, self._number_of_bits_per_feature)
             tree_builder.build(tree)
 
             self.random_forest.append(tree_builder)
@@ -243,14 +245,14 @@ class RandomForest(VHDLcreator):
 
 class Tree(VHDLcreator):
 
-    def __init__(self, name: str, number_of_features: int):
+    def __init__(self, name: str, number_of_features: int, number_of_bits_per_feature: int):
         self._current_split_index = 0
         self._current_leaf_index = 0
 
         self.splits = []
         self.leaves = []
 
-        VHDLcreator.__init__(self, name, number_of_features)
+        VHDLcreator.__init__(self, name, number_of_features, number_of_bits_per_feature)
 
     def build(self, tree):
         self._current_split_index = 0
@@ -306,8 +308,8 @@ class Tree(VHDLcreator):
         return chosen_class
 
     def print_parameters(self):
-        #self.print_leaves()
-        #self.print_splits()
+        # self.print_leaves()
+        # self.print_splits()
         print("Depth: ", self.find_depth())
         print("Number of splits: ", len(self.splits))
         print("Number of leaves: ", len(self.leaves))
@@ -518,17 +520,28 @@ class Tree(VHDLcreator):
         self.splits.append(new_split)
         self._current_split_index += 1
 
+    def _convert_to_fixed_point(self, float_value: float) -> float:
+        n_bits = self._number_of_bits_per_feature
+        f = (1 << n_bits)
+
+        return np.round(float_value * f) * (1.0 / f)
+
     def _preorder(self, tree_, features, following_splits_IDs, following_splits_compare_values, node):
 
+        # if the node is not the end of the path (it is not a leaf)
         if tree_.feature[node] != sklearn.tree._tree.TREE_UNDEFINED:
             following_splits_IDs.append(self._current_split_index)
 
+            # then create a split
             self._add_new_split(
                 self._current_split_index,
                 features[node],
-                tree_.threshold[node]
+                # the raw value has to be change to a fixed point with appropriate number of bits
+                self._convert_to_fixed_point(tree_.threshold[node])
             )
 
+            # run the code for the left side of the tree (comparision wan not true,
+            # hence 0 into list of following splits
             following_splits_compare_values.append(0)
 
             self._preorder(
@@ -539,7 +552,10 @@ class Tree(VHDLcreator):
                 tree_.children_left[node]
             )
 
+            # now do something similar to the right side.
+            # first remove appended 0 value (False)
             following_splits_compare_values.pop()
+            # and add 1 (the comparision result is True)
             following_splits_compare_values.append(1)
 
             self._preorder(
@@ -551,6 +567,7 @@ class Tree(VHDLcreator):
             )
 
         else:
+            # otherwise the node is a leaf
             self._add_new_leaf(
                 self._current_leaf_index,
                 tree_.value[node],

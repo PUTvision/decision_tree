@@ -19,6 +19,7 @@ def visualize_tree(clf: DecisionTreeClassifier, filename: str):
 
     # TODO this part does not work atm, as I do not have pydot installed
     # import pydot
+    # from sklearn.externals.six import StringIO
     # dot_data = StringIO()
     # clf.tree.export_graphviz(clf, out_file=dot_data)
     # graph = pydot.graph_from_dot_data(dot_data.getvalue())
@@ -60,7 +61,7 @@ class TestVisualization(unittest.TestCase):
             self.assertTrue(flag_file_exist)
 
     def tearDown(self):
-        # remove files
+        # remove created files
         file_list = glob.glob("*.dot")
         for f in file_list:
             os.remove(f)
