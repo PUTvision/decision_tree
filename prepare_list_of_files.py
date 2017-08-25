@@ -27,19 +27,25 @@ if __name__ == "__main__":
     with open("data\\samples_filenames\\positive_train_samples_filenames.pickle", "wb") as f:
         pickle.dump(positive_samples_filenames[:number_of_positive_samples], f)
 
-    print(len(positive_samples_filenames[number_of_positive_samples:(number_of_positive_samples+number_of_positive_tests)]))
+    print(len(positive_samples_filenames[
+              number_of_positive_samples:(number_of_positive_samples+number_of_positive_tests)
+              ]))
     with open("data\\samples_filenames\\positive_test_samples_filenames.pickle", "wb") as f:
-        pickle.dump(positive_samples_filenames[number_of_positive_samples:(number_of_positive_samples+number_of_positive_tests)], f)
+        pickle.dump(positive_samples_filenames[
+                    number_of_positive_samples:(number_of_positive_samples+number_of_positive_tests)
+                    ], f)
 
     # prepare negative train examples
-    negative_train_samples_filenames = glob.glob(negative_train_samples_directory + "*.png") + glob.glob(negative_train_samples_directory + "*.jpg")
+    negative_train_samples_filenames = glob.glob(negative_train_samples_directory + "*.png") + \
+                                       glob.glob(negative_train_samples_directory + "*.jpg")
     random.shuffle(negative_train_samples_filenames)
     print(len(negative_train_samples_filenames[:number_of_negative_samples]))
     with open("data\\samples_filenames\\negative_train_samples_filenames.pickle", "wb") as f:
         pickle.dump(negative_train_samples_filenames[:number_of_negative_samples], f)
 
     # prepare negative train examples
-    negative_test_samples_filenames = glob.glob(negative_test_samples_directory + "*.png") + glob.glob(negative_test_samples_directory + "*.jpg")
+    negative_test_samples_filenames = glob.glob(negative_test_samples_directory + "*.png") + \
+                                      glob.glob(negative_test_samples_directory + "*.jpg")
     random.shuffle(negative_test_samples_filenames)
     print(len(negative_test_samples_filenames[:number_of_negative_tests]))
     with open("data\\samples_filenames\\negative_test_samples_filenames.pickle", "wb") as f:

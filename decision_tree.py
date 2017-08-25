@@ -1,107 +1,15 @@
-__author__ = 'Amin'
-
 import pickle
-from analyse_classifier import get_lineage
-from analyse_classifier import get_code
 
-from sklearn.externals.six import StringIO
+from sklearn.tree import DecisionTreeClassifier
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.svm import LinearSVC
+
+from sklearn.model_selection import GridSearchCV
 
 from tree import Tree
 from tree import RandomForest
 
-
-def visualize_tree(clf, filename):
-    print("Number of splits: ", len(clf.tree_.value)) #array of nodes values
-    print("Number of features: ", len(clf.tree.tree_.feature))
-    print("Number of thresholds: ", len(clf.tree.tree_.threshold))
-
-    # save as *.dot file
-    # with open(filename + ".dot", 'w') as f:
-    #     f = tree.export_graphviz(clf, out_file=f)
-
-    # remove file
-    # import os
-    # os.unlink(filename + ".dot")
-
-    import pydot
-    dot_data = StringIO()
-    clf.tree.export_graphviz(clf, out_file=dot_data)
-    graph = pydot.graph_from_dot_data(dot_data.getvalue())
-    graph.write_pdf(filename + ".pdf")
-
-
-def visualize_forest(forest, filename_pattern):
-    print("Number of trees in the forest: ", forest.n_estimators)
-    counter = 0
-    for clf in forest.estimators_[:]:
-        filename = filename_pattern + str(counter)
-        visualize_tree(clf, filename)
-        counter += 1
-
-
-def check_and_print_classifier_accuracy(clf, test_data_positive, test_data_negative):
-    correct_classifications = 0.0
-    incorrect_classifications = 0.0
-
-    #print "Positive tests: "
-    correct_p, incorrect_p = test_classifier(clf, test_data_positive, 1)
-    correct_classifications += correct_p
-    incorrect_classifications += incorrect_p
-
-    #print "Negative tests: "
-    correct_n, incorrect_n = test_classifier(clf, test_data_negative, 0)
-    correct_classifications += correct_n
-    incorrect_classifications += incorrect_n
-
-    print("Accuracy: " +
-          " overall: " +
-          '% 2.4f' % (correct_classifications / (correct_classifications + incorrect_classifications)) + \
-          ", " +
-          " positive: " +
-          '% 2.4f' % (correct_p / (correct_p + incorrect_p)) +
-          ", " +
-          " negative: " +
-          '% 2.4f' % (correct_n / (correct_n + incorrect_n)) +
-          "")
-
-
-def test_classifier(clf, test_data, predicted_result):
-    correct_classifications = 0.0
-    incorrect_classifications = 0.0
-
-    for data in test_data:
-        # [something] is required as otherwise it is treated as 1d array, which generates warnings in scikit learn
-        if clf.predict([data]) == predicted_result:
-            correct_classifications += 1.0
-        else:
-            incorrect_classifications += 1.0
-    #print "Correct classifications: ", correct_classifications
-    #print "Incorrect classifications: ", incorrect_classifications
-
-    return correct_classifications, incorrect_classifications
-
-
-def test_classification_performance(clf, test_data):
-    import time
-
-    number_of_iterations = 1000
-    number_of_data_to_test = 1000
-
-    if number_of_data_to_test < len(test_data):
-        start = time.clock()
-
-        for i in range(0, number_of_iterations):
-            for data in test_data[:number_of_data_to_test]:
-                clf.predict(data)
-
-        end = time.clock()
-        elapsed_time = (end - start)
-
-        print("It takes " + str(elapsed_time / number_of_iterations) + "us to classify " + \
-              str(number_of_data_to_test) + " data.")
-    else:
-        print("There is not enough data provided to evaluate the performance. It is required to provide at least " + \
-              str(number_of_data_to_test) + "values.")
+import dataset_tester
 
 
 def train_classifier_and_test(data_filename, nr_pos_train, nr_pos_test, nr_neg_train, nr_neg_test):
@@ -109,125 +17,114 @@ def train_classifier_and_test(data_filename, nr_pos_train, nr_pos_test, nr_neg_t
     with open("data\\positive_train_" + str(data_filename) + ".pickle", "rb") as f:
         train_data_positive = pickle.load(f)
 
-    class_labels_positive = [1] * len(train_data_positive)
-
     with open("data\\positive_test_" + str(data_filename) + ".pickle", "rb") as f:
         test_data_positive = pickle.load(f)
 
     with open("data\\negative_train_" + str(data_filename) + ".pickle", "rb") as f:
         train_data_negative = pickle.load(f)
 
-    class_labels_negative = [0] * len(train_data_negative)
-
     with open("data\\negative_test_" + str(data_filename) + ".pickle", "rb") as f:
         test_data_negative = pickle.load(f)
 
     training_data = train_data_positive[0:nr_pos_train] + train_data_negative[0:nr_neg_train]
-    class_labels = class_labels_positive[0:nr_pos_train] + class_labels_negative[0:nr_neg_train]
+    training_class_labels = [1] * nr_pos_train + [0] * nr_neg_train
 
-    # train and test the classifier
-    classifier = None
+    test_data = test_data_positive[0:nr_pos_test] + test_data_negative[0:nr_neg_test]
+    test_class_labels = [1] * nr_pos_test + [0] * nr_neg_test
 
-    from sklearn.tree import DecisionTreeClassifier
-    from sklearn.ensemble import RandomForestClassifier
-    from sklearn.svm import LinearSVC
+    # perform grid search to find best parameters
+    # TODO - think about which metric would be best
+    # scores = ['f1']#''precision', 'recall']
+    #
+    # tuned_parameters = [{'max_depth': [5, 10]}]
+    #
+    # clf = None
 
-    #for nr_of_trees in range(51, 52, 10):
-    for nr_of_trees in range(2, 3):
-        #for depth in range(1, 21):
-        for depth in range(21, 22):
+    # for score in scores:
+    #     print("# Tuning hyper-parameters for %s" % score)
+    #     print()
+    #
+    #     clf = GridSearchCV(DecisionTreeClassifier(), tuned_parameters, cv=5, scoring='%s_macro' % score)
+    #     clf = clf.fit(training_data, training_class_labels)
+    #
+    #     print("Best parameters set found on development set:")
+    #     print(clf.best_params_)
+    #     print()
+    #     print("Grid scores on development set:")
+    #     means = clf.cv_results_['mean_test_score']
+    #     stds = clf.cv_results_['std_test_score']
+    #     for mean, std, params in zip(means, stds, clf.cv_results_['params']):
+    #         print("%0.3f (+/-%0.03f) for %r"
+    #               % (mean, std * 2, params))
+    #     print()
+    #
+    #     print("Detailed classification report:")
+    #     print()
+    #     print("The model is trained on the full development set.")
+    #     print("The scores are computed on the full evaluation set.")
+    #     print()
+    #     predicted_class_labels = clf.predict(test_data)
+    #     dataset_tester.report_classifier(clf, test_class_labels, predicted_class_labels)
+    #
+    #     print()
 
-            #print("Parameters: depth: " + '% 02.0f' % depth +
-            #      ", nr of trees: " + '% 02.0f' % nr_of_trees +
-            #      "): ")
+        #classifier = RandomForestClassifier(n_estimators=nr_of_trees, max_depth=depth)
+        #classifier = classifier.fit(training_data, class_labels)
 
-            # classifier = DecisionTreeClassifier(max_depth=depth)
-            # classifier = classifier.fit(training_data, class_labels)
-
-            #classifier = RandomForestClassifier(n_estimators=nr_of_trees, max_depth=depth)
-            #classifier = classifier.fit(training_data, class_labels)
-
-            classfier = LinearSVC()
-            classifier = classfier.fit(training_data, class_labels)
-
-            check_and_print_classifier_accuracy(classifier,
-                                                test_data_positive[:nr_pos_test],
-                                                test_data_negative[:nr_neg_test]
-                                                )
+        #classifier = LinearSVC()
+        #classifier = classifier.fit(training_data, class_labels)
 
     # Use this to test the performance (speed of execution)
-    #test_classification_performance(classifier, test_data_positive)
+    #dataset_tester.test_classification_performance(classifier, test_data, number_of_data_to_test=100)
 
-    #generate_my_classifier(classfier)
+    clf = DecisionTreeClassifier()
+    clf = clf.fit(training_data, training_class_labels)
+
+    generate_my_classifier(clf, test_data)
 
 
-def generate_my_classifier(classifier):
-    list_of_input_value_names = []
-    # TODO - this value should be taken automatically
-    #for i in xrange(0, 3540):
-    for i in range(0, 6000):
-        list_of_input_value_names.append(i)
+def generate_my_classifier(classifier, test_data):
 
     if isinstance(classifier, DecisionTreeClassifier):
         print("Decision tree classifier!")
-        my_classifier = Tree()
+        # number of feature for HoG should be 3780
+        my_classifier = Tree("HoG_tree", len(test_data[0]), 16)
 
     elif isinstance(classifier, RandomForestClassifier):
         print("Random forest classifier!")
-        my_classifier = RandomForest()
+        my_classifier = RandomForest("HoG_forest", 3780, 8)
 
     else:
         print("Unknown type of classifier!")
 
-    my_classifier.build(classifier, list_of_input_value_names)
-
+    my_classifier.build(classifier)
     my_classifier.print_parameters()
 
-    for histogram in test_data_positive:
-        scikit_learn_result = classifier.predict(histogram)
-        my_result = my_classifier.predict(histogram)
+    dataset_tester.compare_with_own_classifier(classifier, my_classifier, test_data)
 
-        if scikit_learn_result != my_result:
-            print("Error!")
-
-    for histogram in test_data_negative:
-        scikit_learn_result = classifier.predict(histogram)
-        my_result = my_classifier.predict(histogram)
-
-        if scikit_learn_result != my_result:
-            print("Error!")
-
-    #my_classifier.create_vhdl_code_old("tree.vhdl")
-    my_classifier.create_vhdl_file()
-
-    #from inspect import getmembers
-    #print( getmembers( classifier.estimators_[0].tree_ ) )
-
-    #visualize_forest(classifier, "tree_visualization\\tree")
-    #visualize_tree(classifier, "tree_visualization\\tree")
 
 if __name__ == "__main__":
     #####################################
     # SET THE FOLLOWING PARAMETERS
     # INRIA DATABASE FOR HOG (64x128)
     # total number of positive samples: 1126, but only 1100 can be used here
-    number_of_positive_samples = 900
-    number_of_positive_tests = 200
+    number_of_positive_samples = 200#900
+    number_of_positive_tests = 50#200
     # total number of negative train samples: 1218, but only 1200 can be used here
-    number_of_negative_samples = 1200
+    number_of_negative_samples = 400#1200
     # total number of negative test samples: 453, , but only 400 can be used here
-    number_of_negative_tests = 400
+    number_of_negative_tests = 50#400
     # END OF PARAMETERS SETTING
     #####################################
 
     # version for HOG
-    print("Result with HoG modified:")
-    train_classifier_and_test("samples_modified",
-                              number_of_positive_samples,
-                              number_of_positive_tests,
-                              number_of_negative_samples,
-                              number_of_negative_tests
-                              )
+    # print("Result with HoG modified:")
+    # train_classifier_and_test("samples_modified",
+    #                           number_of_positive_samples,
+    #                           number_of_positive_tests,
+    #                           number_of_negative_samples,
+    #                           number_of_negative_tests
+    #                           )
     print("Result with HoG from skimage:")
     train_classifier_and_test("samples",
                               number_of_positive_samples,
@@ -235,6 +132,3 @@ if __name__ == "__main__":
                               number_of_negative_samples,
                               number_of_negative_tests
                               )
-
-    # version for LBP
-    #data_filename = "histograms"

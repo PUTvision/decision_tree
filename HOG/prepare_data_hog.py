@@ -15,6 +15,7 @@ height = 128
 # END OF PARAMETERS SETTING
 #####################################
 
+
 def show_images(original, hog):
     fig, (ax_image_original, ax_image_hog) = plt.subplots(1, 2, figsize=(8, 4), sharex=True, sharey=True)
 
@@ -100,4 +101,3 @@ if __name__ == "__main__":
     load_filenames_process_and_save_results("positive_test_samples", False)
     load_filenames_process_and_save_results("negative_train_samples", False)
     load_filenames_process_and_save_results("negative_test_samples", False)
-
