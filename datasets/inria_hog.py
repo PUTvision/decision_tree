@@ -7,7 +7,7 @@ from sklearn.svm import LinearSVC
 import dataset_tester
 
 
-def load_data(data_filename, nr_pos_train, nr_pos_test, nr_neg_train, nr_neg_test):
+def load_data(data_filename, nr_pos_train: int, nr_pos_test: int, nr_neg_train: int, nr_neg_test: int):
     # prepare the training data
     with open("data\\positive_train_" + str(data_filename) + ".pickle", "rb") as f:
         train_data_positive = pickle.load(f)
@@ -30,7 +30,7 @@ def load_data(data_filename, nr_pos_train, nr_pos_test, nr_neg_train, nr_neg_tes
     return train_data, train_target, test_data, test_target
 
 
-if __name__ == "__main__":
+def test_inria_hog():
     #####################################
     # SET THE FOLLOWING PARAMETERS
     # INRIA DATABASE FOR HOG (64x128)
@@ -73,3 +73,5 @@ if __name__ == "__main__":
 
     # Use this to test the performance (speed of execution)
     dataset_tester.test_classification_performance(clf, test_data, number_of_data_to_test=100)
+
+    assert True

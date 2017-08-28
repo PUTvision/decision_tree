@@ -1,5 +1,3 @@
-import numpy as np
-
 from sklearn import datasets
 from sklearn import svm, metrics
 
@@ -53,9 +51,7 @@ def sample_from_scikit():
     plt.show()
 
 
-def load_data(number_of_train_samples: int,
-              number_of_test_samples: int,
-              ):
+def load_data(number_of_train_samples: int, number_of_test_samples: int):
     digits = datasets.load_digits()
     # print(digits.data.shape)
     # print(digits.target.shape)
@@ -72,9 +68,8 @@ def load_data(number_of_train_samples: int,
 
     return train_data, train_target, test_data, test_target
 
-if __name__ == "__main__":
-    # sample_from_scikit()
 
+def test_digits_raw():
     #####################################
     # SET THE FOLLOWING PARAMETERS
     # DIGITS DATABASE
@@ -99,3 +94,6 @@ if __name__ == "__main__":
     # TODO - add option to change the input data to some number of bits so that is can also be compared with full resolution
 
     dataset_tester.test_dataset(4, train_data, train_target, test_data, test_target)
+
+if __name__ == "__main__":
+    sample_from_scikit()
