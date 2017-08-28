@@ -1,4 +1,3 @@
-
 import numpy as np
 
 from sklearn import datasets
@@ -6,7 +5,7 @@ from sklearn import svm, metrics
 
 import matplotlib.pyplot as plt
 
-from dataset_tester import test_dataset
+import dataset_tester
 
 
 def sample_from_scikit():
@@ -53,17 +52,28 @@ def sample_from_scikit():
 
     plt.show()
 
-if __name__ == "__main__":
-    # sample_from_scikit()
 
+def load_data(number_of_train_samples: int,
+              number_of_test_samples: int,
+              ):
     digits = datasets.load_digits()
-    print(digits.data.shape)
-    print(digits.target.shape)
-    print(np.unique(digits.target))
+    # print(digits.data.shape)
+    # print(digits.target.shape)
+    # print(np.unique(digits.target))
 
     # data has to be flatten (8x8 image -> 64x1 matrix)
     data = digits.data.reshape((len(digits.data), -1))
-    print(len(data))
+    # print(len(data))
+
+    train_data = data[:number_of_train_samples]
+    train_target = digits.target[:number_of_train_samples]
+    test_data = data[number_of_train_samples:number_of_train_samples+number_of_test_samples]
+    test_target = digits.target[number_of_train_samples:number_of_train_samples+number_of_test_samples]
+
+    return train_data, train_target, test_data, test_target
+
+if __name__ == "__main__":
+    # sample_from_scikit()
 
     #####################################
     # SET THE FOLLOWING PARAMETERS
@@ -73,13 +83,19 @@ if __name__ == "__main__":
     number_of_test_samples = 1797 - number_of_train_samples
     # END OF PARAMETERS SETTING
     # sanity check
-    if (number_of_train_samples + number_of_test_samples) > len(digits.data):
+    if (number_of_train_samples + number_of_test_samples) > 1797:
         print("ERROR, too much samples set!")
     #####################################
 
-    train_data = data[:number_of_train_samples]
-    train_target = digits.target[:number_of_train_samples]
-    test_data = data[number_of_train_samples:number_of_train_samples+number_of_test_samples]
-    test_target = digits.target[number_of_train_samples:number_of_train_samples+number_of_test_samples]
+    train_data, train_target, test_data, test_target = load_data(
+        number_of_train_samples,
+        number_of_test_samples
+    )
 
-    test_dataset(digits.data.shape[1], train_data, train_target, test_data, test_target)
+    # TODO - it is neccessary to add normalisation step here. otherwise the input is not in 0-1 range
+    # TODO cont. - thus not taking into account bit per feature (which works only for fractions
+    # TODO dataset_tester.normalise_data
+
+    # TODO - add option to change the input data to some number of bits so that is can also be compared with full resolution
+
+    dataset_tester.test_dataset(4, train_data, train_target, test_data, test_target)
