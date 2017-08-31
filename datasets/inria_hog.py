@@ -9,16 +9,16 @@ import dataset_tester
 
 def load_data(data_filename, nr_pos_train: int, nr_pos_test: int, nr_neg_train: int, nr_neg_test: int):
     # prepare the training data
-    with open("data\\positive_train_" + str(data_filename) + ".pickle", "rb") as f:
+    with open("..\\data\\positive_train_" + str(data_filename) + ".pickle", "rb") as f:
         train_data_positive = pickle.load(f)
 
-    with open("data\\positive_test_" + str(data_filename) + ".pickle", "rb") as f:
+    with open("..\\data\\positive_test_" + str(data_filename) + ".pickle", "rb") as f:
         test_data_positive = pickle.load(f)
 
-    with open("data\\negative_train_" + str(data_filename) + ".pickle", "rb") as f:
+    with open("..\\data\\negative_train_" + str(data_filename) + ".pickle", "rb") as f:
         train_data_negative = pickle.load(f)
 
-    with open("data\\negative_test_" + str(data_filename) + ".pickle", "rb") as f:
+    with open("..\\data\\negative_test_" + str(data_filename) + ".pickle", "rb") as f:
         test_data_negative = pickle.load(f)
 
     train_data = train_data_positive[0:nr_pos_train] + train_data_negative[0:nr_neg_train]
@@ -60,18 +60,9 @@ def test_inria_hog():
                                                                  number_of_negative_tests
                                                                  )
 
-    clf = DecisionTreeClassifier()
-    clf = clf.fit(train_data, train_target)
-
-    # clf = RandomForestClassifier(n_estimators=nr_of_trees, max_depth=depth)
-    # clf = classifier.fit(train_data, train_target)
-    #
-    # clf = LinearSVC()
-    # clf = classifier.fit(train_data, train_target)
-
-    dataset_tester.generate_my_classifier(clf, test_data)
-
-    # Use this to test the performance (speed of execution)
-    dataset_tester.test_classification_performance(clf, test_data, number_of_data_to_test=100)
+    dataset_tester.test_dataset(4,
+                                train_data, train_target, test_data, test_target,
+                                dataset_tester.ClassifierType.decison_tree
+                                )
 
     assert True

@@ -10,95 +10,58 @@ from tree import RandomForest
 
 import time
 
-
-def report_classifier(clf, expected, predicted):
-    print("Classification report for classifier %s:\n%s\n"
-          % (clf, metrics.classification_report(expected, predicted)))
-    print("Confusion matrix:\n%s" % metrics.confusion_matrix(expected, predicted))
-
-    correct_classifications = 0
-    incorrect_classifications = 0
-    for e, p in zip(expected, predicted):
-        if e == p:
-            correct_classifications += 1
-        else:
-            incorrect_classifications += 1
-    print("Accuracy overall: " +
-          '% 2.4f' % (correct_classifications / (correct_classifications + incorrect_classifications))
-          )
+from enum import Enum
 
 
-def compare_with_own_classifier(scikit_clf, own_clf, test_data):
-    flag_no_errors = True
-    number_of_errors = 0
-    for sample in test_data:
-        scikit_result = scikit_clf.predict([sample])
-        my_result = own_clf.predict(sample)
-
-        if scikit_result != my_result:
-            print("Error!")
-            print(scikit_result)
-            print(my_result)
-            number_of_errors += 1
-            flag_no_errors = False
-
-    if flag_no_errors:
-        print("All results were the same")
-    else:
-        print("Number of errors: " + str(number_of_errors))
+class ClassifierType(Enum):
+    decison_tree = 1
+    random_forest = 2
+    svm = 3
 
 
 def test_dataset(number_of_bits_per_feature: int,
                  train_data: np.ndarray, train_target: np.ndarray,
-                 test_data: np.ndarray, test_target: np.ndarray
+                 test_data: np.ndarray, test_target: np.ndarray,
+                 clf_type: ClassifierType
                  ):
     number_of_features = len(train_data[0])
 
-    clf_decision_tree = DecisionTreeClassifier()  # max_depth=50)
-    clf_decision_tree.fit(train_data, train_target)
-    test_predicted = clf_decision_tree.predict(test_data)
-    report_classifier(clf_decision_tree, test_target, test_predicted)
+    # TODO - insert grid_search function to first find the best parameters
+    # TODO cont. - alternatively run gridsearch as separate function so this is is fast
 
-    from tree import Tree
-    my_clf_decision_tree = Tree("TreeTest", number_of_features, number_of_bits_per_feature)
-    my_clf_decision_tree.build(clf_decision_tree)
-    my_clf_decision_tree.print_parameters()
-    my_clf_decision_tree.create_vhdl_file()
+    # first create classifier from scikit
+    if clf_type == ClassifierType.decison_tree:
+        clf = DecisionTreeClassifier()
 
-    compare_with_own_classifier(clf_decision_tree, my_clf_decision_tree, test_data)
+    elif clf_type == ClassifierType.random_forest:
+        clf = RandomForestClassifier()
 
-    clf_random_forest = RandomForestClassifier()  # n_estimators=10
-    clf_random_forest.fit(train_data, train_target)
-    test_predicted = clf_random_forest.predict(test_data)
-    report_classifier(clf_decision_tree, test_target, test_predicted)
+    elif clf_type == ClassifierType.svm:
+        # TODO - maybe add the possibility to create SVM just for testing purposes
+        raise ValueError("SVM is not implemented yet")
 
-    from tree import RandomForest
-    my_clf_random_forest = RandomForest(number_of_features, number_of_bits_per_feature)
-    my_clf_random_forest.build(clf_random_forest)
-    my_clf_random_forest.print_parameters()
-    my_clf_random_forest.create_vhdl_file()
-
-    compare_with_own_classifier(clf_random_forest, my_clf_random_forest, test_data)
-
-
-def test_classification_performance(clf, test_data, number_of_data_to_test=1000, number_of_iterations=1000):
-    if number_of_data_to_test <= len(test_data):
-        start = time.clock()
-
-        for i in range(0, number_of_iterations):
-            for data in test_data[:number_of_data_to_test]:
-                clf.predict([data])
-
-        end = time.clock()
-        elapsed_time = (end - start)
-
-        print("It takes " +
-              '% 2.4f' % (elapsed_time / number_of_iterations) +
-              "us to classify " +
-              str(number_of_data_to_test) + " data.")
     else:
-        print("There is not enough data provided to evaluate the performance. It is required to provide at least " +
-              str(number_of_data_to_test) + " values.")
+        raise ValueError("Unknown classifier type specified")
+
+    # TODO - it is neccessary to add normalisation step here. otherwise the input is not in 0-1 range
+    # TODO cont. - thus not taking into account bit per feature (which works only for fractions
+    # TODO dataset_tester.normalise_data
+    # TODO - add option to change the input data to some number of bits so that is can also be compared with full resolution
+    # use normalise_data function
+
+    # train classifier and run it on test data, report the results
+    clf.fit(train_data, train_target)
+    test_predicted = clf.predict(test_data)
+    report_classifier(clf, test_target, test_predicted)
+
+    # generate own classifier based on the one from scikit
+    my_clf = generate_my_classifier(clf, number_of_features, number_of_bits_per_feature)
+
+    # check if own classifier works the same as scikit one
+    compare_with_own_classifier(clf, my_clf, test_data)
+
+    # optionally check the performance of the scikit classifier for reference (does not work for own classifier)
+    test_classification_performance(clf, test_data, 10)
 
 
 def normalise_data(train_data: np.ndarray, test_data: np.ndarray):
@@ -122,40 +85,100 @@ def normalise_data(train_data: np.ndarray, test_data: np.ndarray):
         print(normalised_2)
 
 
-def generate_my_classifier(classifier, test_data):
-    number_of_features = len(test_data[0])
+def report_classifier(clf, expected, predicted):
+    print("Classification report for classifier %s:\n%s\n"
+          % (clf, metrics.classification_report(expected, predicted)))
+    print("Confusion matrix:\n%s" % metrics.confusion_matrix(expected, predicted))
 
-    if isinstance(classifier, DecisionTreeClassifier):
-        print("Decision tree classifier!")
-        my_classifier = Tree("HoG_tree", number_of_features, 16)
+    correct_classifications = 0
+    incorrect_classifications = 0
+    for e, p in zip(expected, predicted):
+        if e == p:
+            correct_classifications += 1
+        else:
+            incorrect_classifications += 1
+    print("Accuracy overall: " +
+          '% 2.4f' % (correct_classifications / (correct_classifications + incorrect_classifications))
+          )
 
-    elif isinstance(classifier, RandomForestClassifier):
-        print("Random forest classifier!")
-        my_classifier = RandomForest("HoG_forest", number_of_features, 8)
 
+def generate_my_classifier(clf, number_of_features, number_of_bits_per_feature: int):
+    if isinstance(clf, DecisionTreeClassifier):
+        print("Creating decision tree classifier!")
+        my_clf = Tree("TreeTest", number_of_features, number_of_bits_per_feature)
+
+    elif isinstance(clf, RandomForestClassifier):
+        print("Creating random forest classifier!")
+        my_clf = RandomForest("HoG_forest", number_of_features, number_of_bits_per_feature)
     else:
         print("Unknown type of classifier!")
+        raise ValueError("Unknown type of classifier!")
 
-    my_classifier.build(classifier)
-    my_classifier.print_parameters()
+    my_clf.build(clf)
+    my_clf.print_parameters()
+    my_clf.create_vhdl_file()
 
-    compare_with_own_classifier(classifier, my_classifier, test_data)
+    return my_clf
 
 
+def compare_with_own_classifier(scikit_clf, own_clf, test_data):
+    flag_no_errors = True
+    number_of_errors = 0
+    for sample in test_data:
+        scikit_result = scikit_clf.predict([sample])
+        my_result = own_clf.predict(sample)
+
+        if scikit_result != my_result:
+            print("Error!")
+            print(scikit_result)
+            print(my_result)
+            number_of_errors += 1
+            flag_no_errors = False
+
+    if flag_no_errors:
+        print("All results were the same")
+    else:
+        print("Number of errors: " + str(number_of_errors))
+
+
+def test_classification_performance(clf, test_data, number_of_data_to_test=1000, number_of_iterations=1000):
+    if number_of_data_to_test <= len(test_data):
+        start = time.clock()
+
+        for i in range(0, number_of_iterations):
+            for data in test_data[:number_of_data_to_test]:
+                clf.predict([data])
+
+        end = time.clock()
+        elapsed_time = (end - start)
+
+        print("It takes " +
+              '% 2.4f' % (elapsed_time / number_of_iterations) +
+              "us to classify " +
+              str(number_of_data_to_test) + " data.")
+    else:
+        print("There is not enough data provided to evaluate the performance. It is required to provide at least " +
+              str(number_of_data_to_test) + " values.")
+
+
+# TODO - WIP, this should work for different classifier types
 def grid_search(train_data, train_target, test_data, test_target):
     # perform grid search to find best parameters
     # TODO - think about which metric would be best
     scores = ['f1']#''precision', 'recall']
 
-    tuned_parameters = [{'max_depth': [5, 10]}]
-
-    clf = None
+    tuned_parameters = [{'max_depth': [5, 10, 15, 20, 30, 40, 50, 60, 70, 80, 90, 100, None],
+                         'splitter': ["best", "random"],
+                         # TODO - the following parameter could be a float (0.0-1.0) to tell the percentage - test it!
+                         'min_samples_split': [2, 3, 4, 5, 6, 7, 8, 9, 10, 15, 20, 30, 40, 50, 75, 100]
+                         #'min_samples_split': [0.001, 0.002, 0.003, 0.004, 0.005, 0.01, 0.02, 0.05]
+                         }]
 
     for score in scores:
         print("# Tuning hyper-parameters for %s" % score)
         print()
 
-        clf = GridSearchCV(DecisionTreeClassifier(), tuned_parameters, cv=5, scoring='%s_macro' % score)
+        clf = GridSearchCV(DecisionTreeClassifier(), tuned_parameters, cv=5, scoring='%s_macro' % score, n_jobs=-1)
         clf = clf.fit(train_data, train_target)
 
         print("Best parameters set found on development set:")

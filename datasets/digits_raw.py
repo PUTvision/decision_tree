@@ -74,7 +74,7 @@ def test_digits_raw():
     # SET THE FOLLOWING PARAMETERS
     # DIGITS DATABASE
     # total number of samples: 1797 (each is 8x8)
-    number_of_train_samples = 1200
+    number_of_train_samples = 1600
     number_of_test_samples = 1797 - number_of_train_samples
     # END OF PARAMETERS SETTING
     # sanity check
@@ -87,13 +87,14 @@ def test_digits_raw():
         number_of_test_samples
     )
 
-    # TODO - it is neccessary to add normalisation step here. otherwise the input is not in 0-1 range
-    # TODO cont. - thus not taking into account bit per feature (which works only for fractions
-    # TODO dataset_tester.normalise_data
+    dataset_tester.test_dataset(4,
+                                train_data, train_target, test_data, test_target,
+                                dataset_tester.ClassifierType.decison_tree
+                                )
+    #dataset_tester.grid_search(train_data, train_target, test_data, test_target)
 
-    # TODO - add option to change the input data to some number of bits so that is can also be compared with full resolution
-
-    dataset_tester.test_dataset(4, train_data, train_target, test_data, test_target)
+    assert True
 
 if __name__ == "__main__":
-    sample_from_scikit()
+    #sample_from_scikit()
+    test_digits_raw()

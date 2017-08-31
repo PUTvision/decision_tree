@@ -10,7 +10,7 @@ def load_data(number_of_train_samples: int, number_of_test_samples: int):
     # print(mnist.target.shape)
     # print(np.unique(mnist.target))
 
-    # TODO - is this enough or should I use my own funtion?
+    # TODO - is this enough or should I use my own function?
     mnist.data, mnist.target = shuffle(mnist.data, mnist.target)
     # shuffle_data_and_target(mnist.data, mnist.target)
 
@@ -39,6 +39,9 @@ def test_mnist_raw():
         number_of_test_samples
     )
 
-    dataset_tester.test_dataset(4, train_data, train_target, test_data, test_target)
+    dataset_tester.test_dataset(4,
+                                train_data, train_target, test_data, test_target,
+                                dataset_tester.ClassifierType.decison_tree
+                                )
 
     assert True
