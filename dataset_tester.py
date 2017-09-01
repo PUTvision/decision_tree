@@ -14,9 +14,8 @@ from enum import Enum
 
 
 class ClassifierType(Enum):
-    decison_tree = 1
+    decision_tree = 1
     random_forest = 2
-    svm = 3
 
 
 def test_dataset(number_of_bits_per_feature: int,
@@ -27,24 +26,18 @@ def test_dataset(number_of_bits_per_feature: int,
     number_of_features = len(train_data[0])
 
     # TODO - insert grid_search function to first find the best parameters
-    # TODO cont. - alternatively run gridsearch as separate function so this is is fast
+    # TODO cont. - alternatively run gridsearch as a separate function so this is is fast
 
     # first create classifier from scikit
-    if clf_type == ClassifierType.decison_tree:
+    if clf_type == ClassifierType.decision_tree:
         clf = DecisionTreeClassifier()
-
     elif clf_type == ClassifierType.random_forest:
         clf = RandomForestClassifier()
-
-    elif clf_type == ClassifierType.svm:
-        # TODO - maybe add the possibility to create SVM just for testing purposes
-        raise ValueError("SVM is not implemented yet")
-
     else:
         raise ValueError("Unknown classifier type specified")
 
-    # TODO - it is neccessary to add normalisation step here. otherwise the input is not in 0-1 range
-    # TODO cont. - thus not taking into account bit per feature (which works only for fractions
+    # TODO - it is necessary to add normalisation step here. otherwise the input is not in 0-1 range
+    # TODO cont. - thus not taking into account bit per feature (which works only for fractions)
     # TODO dataset_tester.normalise_data
     # TODO - add option to change the input data to some number of bits so that is can also be compared with full resolution
     # use normalise_data function
@@ -52,6 +45,10 @@ def test_dataset(number_of_bits_per_feature: int,
     # train classifier and run it on test data, report the results
     clf.fit(train_data, train_target)
     test_predicted = clf.predict(test_data)
+
+    print("Detailed classification report:")
+    print("The model is trained on the full development set.")
+    print("The scores are computed on the full evaluation set.")
     report_classifier(clf, test_target, test_predicted)
 
     # generate own classifier based on the one from scikit
@@ -64,6 +61,7 @@ def test_dataset(number_of_bits_per_feature: int,
     test_classification_performance(clf, test_data, 10)
 
 
+# TODO - WIP, chose one version and test it thoroughly
 def normalise_data(train_data: np.ndarray, test_data: np.ndarray):
     from sklearn import preprocessing
 
@@ -161,43 +159,56 @@ def test_classification_performance(clf, test_data, number_of_data_to_test=1000,
               str(number_of_data_to_test) + " values.")
 
 
-# TODO - WIP, this should work for different classifier types
-def grid_search(train_data, train_target, test_data, test_target):
+# TODO - WIP, almost done
+# TODO - should this use both train and test data or not?
+def grid_search(train_data: np.ndarray, train_target: np.ndarray, clf_type: ClassifierType):
     # perform grid search to find best parameters
     # TODO - think about which metric would be best
     scores = ['f1']#''precision', 'recall']
+    # TODO - min_samples_split could be a float (0.0-1.0) to tell the percentage - test it!
 
-    tuned_parameters = [{'max_depth': [5, 10, 15, 20, 30, 40, 50, 60, 70, 80, 90, 100, None],
-                         'splitter': ["best", "random"],
-                         # TODO - the following parameter could be a float (0.0-1.0) to tell the percentage - test it!
-                         'min_samples_split': [2, 3, 4, 5, 6, 7, 8, 9, 10, 15, 20, 30, 40, 50, 75, 100]
-                         #'min_samples_split': [0.001, 0.002, 0.003, 0.004, 0.005, 0.01, 0.02, 0.05]
-                         }]
+    # general observations:
+    # for random_forest increasing the min_samples_split decreases performance, checking values above 20 is not useful
+    # in general best results are obtained using min_samples_split=2 (default)
+
+    if clf_type == ClassifierType.decision_tree:
+        tuned_parameters = [{'max_depth': [5, 10, 15, 20, 30, 40, 50, 60, 70, 80, 90, 100, None],
+                             'splitter': ["best", "random"],
+                             'min_samples_split': [2, 3, 4, 5, 6, 7, 8, 9, 10, 15, 20]
+                             #'min_samples_split': [0.001, 0.002, 0.003, 0.004, 0.005, 0.01, 0.02, 0.05]
+                             }]
+    elif clf_type == ClassifierType.random_forest:
+        tuned_parameters = [{'max_depth': [5, 10, 20, 35, 50, 70, 100, None],
+                             'n_estimators': [5, 10, 20, 35, 50, 70, 100],
+                             'min_samples_split': [2, 3, 4, 5, 10]#, 20]
+                             #'min_samples_split': [2, 3, 4, 5, 6, 7, 8, 9, 10, 15, 20, 30, 40, 50, 75, 100]
+                             }]
+
+    else:
+        raise ValueError("Unknown classifier type specified")
 
     for score in scores:
         print("# Tuning hyper-parameters for %s" % score)
         print()
 
-        clf = GridSearchCV(DecisionTreeClassifier(), tuned_parameters, cv=5, scoring='%s_macro' % score, n_jobs=-1)
+        if clf_type == ClassifierType.decision_tree:
+            clf = GridSearchCV(DecisionTreeClassifier(), tuned_parameters, cv=5, scoring='%s_macro' % score, n_jobs=-1)
+        elif clf_type == ClassifierType.random_forest:
+            clf = GridSearchCV(RandomForestClassifier(), tuned_parameters, cv=5, scoring='%s_macro' % score, n_jobs=-1)
+        else:
+            raise ValueError("Unknown classifier type specified")
+
         clf = clf.fit(train_data, train_target)
 
         print("Best parameters set found on development set:")
         print(clf.best_params_)
         print()
         print("Grid scores on development set:")
-        means = clf.cv_results_['mean_test_score']
-        stds = clf.cv_results_['std_test_score']
-        for mean, std, params in zip(means, stds, clf.cv_results_['params']):
+        for mean, std, params in zip(
+                clf.cv_results_['mean_test_score'],
+                clf.cv_results_['std_test_score'],
+                clf.cv_results_['params']
+        ):
             print("%0.3f (+/-%0.03f) for %r"
                   % (mean, std * 2, params))
-        print()
-
-        print("Detailed classification report:")
-        print()
-        print("The model is trained on the full development set.")
-        print("The scores are computed on the full evaluation set.")
-        print()
-        predicted_class_labels = clf.predict(test_data)
-        report_classifier(clf, test_target, predicted_class_labels)
-
         print()

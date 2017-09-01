@@ -62,7 +62,7 @@ def test_inria_hog():
 
     dataset_tester.test_dataset(4,
                                 train_data, train_target, test_data, test_target,
-                                dataset_tester.ClassifierType.decison_tree
+                                dataset_tester.ClassifierType.decision_tree
                                 )
 
     assert True

@@ -74,7 +74,7 @@ def test_digits_raw():
     # SET THE FOLLOWING PARAMETERS
     # DIGITS DATABASE
     # total number of samples: 1797 (each is 8x8)
-    number_of_train_samples = 1600
+    number_of_train_samples = 1000
     number_of_test_samples = 1797 - number_of_train_samples
     # END OF PARAMETERS SETTING
     # sanity check
@@ -87,11 +87,11 @@ def test_digits_raw():
         number_of_test_samples
     )
 
-    dataset_tester.test_dataset(4,
-                                train_data, train_target, test_data, test_target,
-                                dataset_tester.ClassifierType.decison_tree
-                                )
-    #dataset_tester.grid_search(train_data, train_target, test_data, test_target)
+    # dataset_tester.test_dataset(4,
+    #                             train_data, train_target, test_data, test_target,
+    #                             dataset_tester.ClassifierType.decision_tree
+    #                             )
+    dataset_tester.grid_search(train_data, train_target, dataset_tester.ClassifierType.random_forest)
 
     assert True
 
