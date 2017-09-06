@@ -1,25 +1,40 @@
 from sklearn import datasets
 from sklearn.utils import shuffle
 
-import dataset_tester
+import numpy as np
+
+from datasets.dataset_base import DatasetBase
 
 
-def load_data(number_of_train_samples: int, number_of_test_samples: int):
-    mnist = datasets.fetch_mldata('MNIST original', data_home=".//data//MNIST//")
-    # print(mnist.data.shape)
-    # print(mnist.target.shape)
-    # print(np.unique(mnist.target))
+class MnistRaw(DatasetBase):
+    def __init__(self, number_of_train_samples: int, number_of_test_samples: int):
+        self._number_of_train_samples = number_of_train_samples
+        self._number_of_test_samples = number_of_test_samples
 
-    # TODO - is this enough or should I use my own function?
-    mnist.data, mnist.target = shuffle(mnist.data, mnist.target)
-    # shuffle_data_and_target(mnist.data, mnist.target)
+    def _load_data(self):
+        mnist = datasets.fetch_mldata('MNIST original', data_home=".//data//MNIST//")
+        # print(mnist.data.shape)
+        # print(mnist.target.shape)
+        # print(np.unique(mnist.target))
 
-    train_data = mnist.data[:number_of_train_samples]
-    train_target = mnist.target[:number_of_train_samples]
-    test_data = mnist.data[number_of_train_samples:number_of_train_samples+number_of_test_samples]
-    test_target = mnist.target[number_of_train_samples:number_of_train_samples+number_of_test_samples]
+        # TODO - is this enough or should I use my own function?
+        mnist.data, mnist.target = shuffle(mnist.data, mnist.target)
+        # shuffle_data_and_target(mnist.data, mnist.target)
 
-    return train_data, train_target, test_data, test_target
+        train_data = mnist.data[:self._number_of_train_samples]
+        train_target = mnist.target[:self._number_of_train_samples]
+        test_data = mnist.data[self._number_of_train_samples:self._number_of_train_samples+self._number_of_test_samples]
+        test_target = mnist.target[self._number_of_train_samples:self._number_of_train_samples+self._number_of_test_samples]
+
+        return train_data, train_target, test_data, test_target
+
+    @staticmethod
+    def _normalise(data: np.ndarray):
+        # in case of MNIST data it is possible to just divide each data by maximum value
+        # each feature is in range 0-255
+        data = data / 255
+
+        return data
 
 
 def test_mnist_raw():
@@ -34,14 +49,7 @@ def test_mnist_raw():
         print("ERROR, too much samples set!")
     #####################################
 
-    train_data, train_target, test_data, test_target = load_data(
-        number_of_train_samples,
-        number_of_test_samples
-    )
-
-    dataset_tester.test_dataset(4,
-                                train_data, train_target, test_data, test_target,
-                                dataset_tester.ClassifierType.decision_tree
-                                )
+    d = MnistRaw(number_of_train_samples, number_of_test_samples)
+    d.run()
 
     assert True

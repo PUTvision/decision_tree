@@ -1,33 +1,46 @@
 import pickle
 
-from sklearn.tree import DecisionTreeClassifier
-from sklearn.ensemble import RandomForestClassifier
-from sklearn.svm import LinearSVC
+import numpy as np
 
-import dataset_tester
+from datasets.dataset_base import DatasetBase
 
 
-def load_data(data_filename, nr_pos_train: int, nr_pos_test: int, nr_neg_train: int, nr_neg_test: int):
-    # prepare the training data
-    with open("..\\data\\positive_train_" + str(data_filename) + ".pickle", "rb") as f:
-        train_data_positive = pickle.load(f)
+class InriaHoG(DatasetBase):
+    def __init__(self, data_filename: str, nr_pos_train: int, nr_pos_test: int, nr_neg_train: int, nr_neg_test: int):
+        self._data_filename = data_filename
+        self._nr_pos_train = nr_pos_train
+        self._nr_pos_test = nr_pos_test
+        self._nr_neg_train = nr_neg_train
+        self._nr_neg_test = nr_neg_test
 
-    with open("..\\data\\positive_test_" + str(data_filename) + ".pickle", "rb") as f:
-        test_data_positive = pickle.load(f)
+    def _load_data(self):
+        # prepare the training data
+        with open("..\\data\\positive_train_" + self._data_filename + ".pickle", "rb") as f:
+            train_data_positive = pickle.load(f)
 
-    with open("..\\data\\negative_train_" + str(data_filename) + ".pickle", "rb") as f:
-        train_data_negative = pickle.load(f)
+        with open("..\\data\\positive_test_" + self._data_filename + ".pickle", "rb") as f:
+            test_data_positive = pickle.load(f)
 
-    with open("..\\data\\negative_test_" + str(data_filename) + ".pickle", "rb") as f:
-        test_data_negative = pickle.load(f)
+        with open("..\\data\\negative_train_" + self._data_filename + ".pickle", "rb") as f:
+            train_data_negative = pickle.load(f)
 
-    train_data = train_data_positive[0:nr_pos_train] + train_data_negative[0:nr_neg_train]
-    train_target = [1] * nr_pos_train + [0] * nr_neg_train
+        with open("..\\data\\negative_test_" + self._data_filename + ".pickle", "rb") as f:
+            test_data_negative = pickle.load(f)
 
-    test_data = test_data_positive[0:nr_pos_test] + test_data_negative[0:nr_neg_test]
-    test_target = [1] * nr_pos_test + [0] * nr_neg_test
+        train_data = train_data_positive[0:self._nr_pos_train] + train_data_negative[0:self._nr_neg_train]
+        train_target = [1] * self._nr_pos_train + [0] * self._nr_neg_train
 
-    return train_data, train_target, test_data, test_target
+        test_data = test_data_positive[0:self._nr_pos_test] + test_data_negative[0:self._nr_neg_test]
+        test_target = [1] * self._nr_pos_test + [0] * self._nr_neg_test
+
+        return train_data, train_target, test_data, test_target
+
+    @staticmethod
+    def _normalise(data: np.ndarray):
+        # TODO - check how the data should be normalised
+        raise NotImplementedError("datasets should implement this!")
+
+        return data
 
 
 def test_inria_hog():
@@ -44,25 +57,17 @@ def test_inria_hog():
     # END OF PARAMETERS SETTING
     #####################################
 
-    # version for HOG
-    # print("Result with HoG modified:")
-    # train_data, train_target, test_data, test_target = load_data("samples_modified",
-    #                                                              number_of_positive_samples,
-    #                                                              number_of_positive_tests,
-    #                                                              number_of_negative_samples,
-    #                                                              number_of_negative_tests
-    #                                                              )
-    print("Result with HoG from skimage:")
-    train_data, train_target, test_data, test_target = load_data("samples",
-                                                                 number_of_positive_samples,
-                                                                 number_of_positive_tests,
-                                                                 number_of_negative_samples,
-                                                                 number_of_negative_tests
-                                                                 )
-
-    dataset_tester.test_dataset(4,
-                                train_data, train_target, test_data, test_target,
-                                dataset_tester.ClassifierType.decision_tree
-                                )
+    d = InriaHoG("samples",
+                 # use the following file if modifed (own HoG should be used)
+                 # "samples_modified",
+                 number_of_positive_samples,
+                 number_of_positive_tests,
+                 number_of_negative_samples,
+                 number_of_negative_tests
+                 )
+    d.run()
 
     assert True
+
+if __name__ == "__main__":
+    test_inria_hog()

@@ -2,8 +2,9 @@ from sklearn import datasets
 from sklearn import svm, metrics
 
 import matplotlib.pyplot as plt
+import numpy as np
 
-import dataset_tester
+from datasets.dataset_base import DatasetBase
 
 
 def sample_from_scikit():
@@ -51,22 +52,35 @@ def sample_from_scikit():
     plt.show()
 
 
-def load_data(number_of_train_samples: int, number_of_test_samples: int):
-    digits = datasets.load_digits()
-    # print(digits.data.shape)
-    # print(digits.target.shape)
-    # print(np.unique(digits.target))
+class DigitsRaw(DatasetBase):
+    def __init__(self, number_of_train_samples: int, number_of_test_samples: int):
+        self._number_of_train_samples = number_of_train_samples
+        self._number_of_test_samples = number_of_test_samples
 
-    # data has to be flatten (8x8 image -> 64x1 matrix)
-    data = digits.data.reshape((len(digits.data), -1))
-    # print(len(data))
+    def _load_data(self):
+        digits = datasets.load_digits()
+        # print(digits.data.shape)
+        # print(digits.target.shape)
+        # print(np.unique(digits.target))
 
-    train_data = data[:number_of_train_samples]
-    train_target = digits.target[:number_of_train_samples]
-    test_data = data[number_of_train_samples:number_of_train_samples+number_of_test_samples]
-    test_target = digits.target[number_of_train_samples:number_of_train_samples+number_of_test_samples]
+        # data has to be flatten (8x8 image -> 64x1 matrix)
+        data = digits.data.reshape((len(digits.data), -1))
+        # print(len(data))
 
-    return train_data, train_target, test_data, test_target
+        train_data = data[:self._number_of_train_samples]
+        train_target = digits.target[:self._number_of_train_samples]
+        test_data = data[self._number_of_train_samples:self._number_of_train_samples+self._number_of_test_samples]
+        test_target = digits.target[self._number_of_train_samples:self._number_of_train_samples+self._number_of_test_samples]
+
+        return train_data, train_target, test_data, test_target
+
+    @staticmethod
+    def _normalise(data: np.ndarray):
+        # in case of digits data it is possible to just divide each data by maximum value
+        # each feature is in range 0-16
+        data = data / 16
+
+        return data
 
 
 def test_digits_raw():
@@ -82,16 +96,8 @@ def test_digits_raw():
         print("ERROR, too much samples set!")
     #####################################
 
-    train_data, train_target, test_data, test_target = load_data(
-        number_of_train_samples,
-        number_of_test_samples
-    )
-
-    # dataset_tester.test_dataset(4,
-    #                             train_data, train_target, test_data, test_target,
-    #                             dataset_tester.ClassifierType.decision_tree
-    #                             )
-    dataset_tester.grid_search(train_data, train_target, dataset_tester.ClassifierType.random_forest)
+    d = DigitsRaw(number_of_train_samples, number_of_test_samples)
+    d.run()
 
     assert True
 
