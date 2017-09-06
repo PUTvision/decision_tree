@@ -159,12 +159,13 @@ def test_classification_performance(clf, test_data, number_of_data_to_test=1000,
               str(number_of_data_to_test) + " values.")
 
 
-# TODO - WIP, almost done
-# TODO - should this use both train and test data or not?
-def grid_search(train_data: np.ndarray, train_target: np.ndarray, clf_type: ClassifierType):
+# this should use the whole data available to find best parameters. So pass both train and test data, find parameters
+# and then retrain with found parameters on train data
+def grid_search(data: np.ndarray, target: np.ndarray, clf_type: ClassifierType):
     # perform grid search to find best parameters
-    # TODO - think about which metric would be best
-    scores = ['f1']#''precision', 'recall']
+    scores = ['f1_weighted']
+    # alternatives: http://scikit-learn.org/stable/modules/model_evaluation.html#common-cases-predefined-values
+
     # TODO - min_samples_split could be a float (0.0-1.0) to tell the percentage - test it!
 
     # general observations:
@@ -192,13 +193,13 @@ def grid_search(train_data: np.ndarray, train_target: np.ndarray, clf_type: Clas
         print()
 
         if clf_type == ClassifierType.decision_tree:
-            clf = GridSearchCV(DecisionTreeClassifier(), tuned_parameters, cv=5, scoring='%s_macro' % score, n_jobs=-1)
+            clf = GridSearchCV(DecisionTreeClassifier(), tuned_parameters, cv=5, scoring='%s' % score, n_jobs=-1)
         elif clf_type == ClassifierType.random_forest:
-            clf = GridSearchCV(RandomForestClassifier(), tuned_parameters, cv=5, scoring='%s_macro' % score, n_jobs=-1)
+            clf = GridSearchCV(RandomForestClassifier(), tuned_parameters, cv=5, scoring='%s' % score, n_jobs=-1)
         else:
             raise ValueError("Unknown classifier type specified")
 
-        clf = clf.fit(train_data, train_target)
+        clf = clf.fit(data, target)
 
         print("Best parameters set found on development set:")
         print(clf.best_params_)
