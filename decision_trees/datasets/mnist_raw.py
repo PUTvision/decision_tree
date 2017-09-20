@@ -1,9 +1,8 @@
+import numpy as np
 from sklearn import datasets
 from sklearn.utils import shuffle
 
-import numpy as np
-
-from datasets.dataset_base import DatasetBase
+from decision_trees.datasets.dataset_base import DatasetBase
 
 
 class MnistRaw(DatasetBase):

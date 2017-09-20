@@ -2,7 +2,7 @@ import pickle
 
 import numpy as np
 
-from datasets.dataset_base import DatasetBase
+from decision_trees.datasets.dataset_base import DatasetBase
 
 
 class InriaHoG(DatasetBase):

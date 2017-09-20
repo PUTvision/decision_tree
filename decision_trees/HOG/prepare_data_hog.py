@@ -5,7 +5,7 @@ import skimage
 import skimage.data
 import skimage.feature
 
-from HOG import HOG_modified
+from decision_trees.HOG import HOG_modified
 
 #####################################
 # SET THE FOLLOWING PARAMETERS

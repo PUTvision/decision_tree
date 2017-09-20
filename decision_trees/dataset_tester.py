@@ -1,16 +1,14 @@
-import numpy as np
+import time
+from enum import Enum
 
-from sklearn.tree import DecisionTreeClassifier
+import numpy as np
+from sklearn import metrics
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.model_selection import GridSearchCV
-from sklearn import metrics
+from sklearn.tree import DecisionTreeClassifier
 
-from tree import Tree
-from tree import RandomForest
-
-import time
-
-from enum import Enum
+from decision_trees.tree import RandomForest
+from decision_trees.tree import Tree
 
 
 class ClassifierType(Enum):

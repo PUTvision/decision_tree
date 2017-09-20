@@ -1,10 +1,9 @@
+import matplotlib.pyplot as plt
+import numpy as np
 from sklearn import datasets
 from sklearn import svm, metrics
 
-import matplotlib.pyplot as plt
-import numpy as np
-
-from datasets.dataset_base import DatasetBase
+from decision_trees.datasets.dataset_base import DatasetBase
 
 
 def sample_from_scikit():

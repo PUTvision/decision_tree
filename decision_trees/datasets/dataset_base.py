@@ -1,22 +1,20 @@
 import abc
-import numpy as np
 import typing
 
+import numpy as np
 
-import dataset_tester
+from decision_trees import dataset_tester
 
 
-class DatasetBase:
-    __metaclass__ = abc.ABCMeta
-
+class DatasetBase(metaclass=abc.ABCMeta):
     @abc.abstractmethod
     def _load_data(self) -> typing.Union[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
-        return
+        ...
 
     @staticmethod
     @abc.abstractmethod
     def _normalise(data: np.ndarray):
-        return
+        ...
 
     def run(self):
         train_data, train_target, test_data, test_target = self._load_data()
@@ -26,7 +24,7 @@ class DatasetBase:
 
         # dataset_tester.test_dataset(4,
         #                             train_data, train_target, test_data, test_target,
-        #                             dataset_tester.ClassifierType.decision_tree
+        #                             dataset_tester.ClassifierType.decision_trees
         #                             )
         dataset_tester.grid_search(np.concatenate((train_data, test_data)),
                                    np.concatenate((train_target, test_target)),

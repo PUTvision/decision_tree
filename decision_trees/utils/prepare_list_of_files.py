@@ -1,6 +1,6 @@
 import glob
-import random
 import pickle
+import random
 
 if __name__ == "__main__":
     #####################################

@@ -8,7 +8,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import skimage
 
-from LBP import MF_lbp
+from decision_trees.LBP import MF_lbp
 
 
 def show_histograms(original_image, lbp_image, nr_of_image_bins, nr_of_lbp_bins):
