@@ -1,5 +1,5 @@
 import abc
-import typing
+from typing import Tuple
 
 import numpy as np
 
@@ -8,7 +8,7 @@ from decision_trees import dataset_tester
 
 class DatasetBase(metaclass=abc.ABCMeta):
     @abc.abstractmethod
-    def _load_data(self) -> typing.Union[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
+    def _load_data(self) -> Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
         ...
 
     @staticmethod
