@@ -23,9 +23,6 @@ def test_dataset(number_of_bits_per_feature: int,
                  ):
     number_of_features = len(train_data[0])
 
-    # TODO - insert grid_search function to first find the best parameters
-    # TODO cont. - alternatively run gridsearch as a separate function so this is is fast
-
     # first create classifier from scikit
     if clf_type == ClassifierType.decision_tree:
         clf = DecisionTreeClassifier()
@@ -34,11 +31,8 @@ def test_dataset(number_of_bits_per_feature: int,
     else:
         raise ValueError("Unknown classifier type specified")
 
-    # TODO - it is necessary to add normalisation step here. otherwise the input is not in 0-1 range
-    # TODO cont. - thus not taking into account bit per feature (which works only for fractions)
-    # TODO dataset_tester.normalise_data
-    # TODO - add option to change the input data to some number of bits so that is can also be compared with full resolution
-    # use normalise_data function
+    # TODO - it is necessary for the data to be normalised here
+    # TODO - add an option to change the input data to some number of bits so that is can also be compared with full resolution
 
     # train classifier and run it on test data, report the results
     clf.fit(train_data, train_target)
@@ -67,7 +61,9 @@ def normalise_data(train_data: np.ndarray, test_data: np.ndarray):
     print("np.ptp(train_data): " + str(np.ptp(train_data)))
 
     normalised_1 = 1 - (train_data - np.max(train_data)) / -np.ptp(train_data)
-    normalised_2 = preprocessing.minmax_scale(train_data)
+    normalised_2 = preprocessing.minmax_scale(train_data, axis=1)
+
+    print(train_data[0])
 
     train_data /= 16
     test_data /= 16

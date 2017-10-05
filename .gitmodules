@@ -1,0 +1,3 @@
+[submodule "submodules/fashion-mnist"]
+	path = submodules/fashion-mnist
+	url = https://github.com/zalandoresearch/fashion-mnist
