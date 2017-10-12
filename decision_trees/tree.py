@@ -3,6 +3,8 @@ import abc
 import numpy as np
 import sklearn.tree
 
+from decision_trees.utils.convert_to_fixed_point import convert_to_fixed_point
+
 
 class Split:
 
@@ -521,12 +523,6 @@ class Tree(VHDLcreator):
         self.splits.append(new_split)
         self._current_split_index += 1
 
-    def _convert_to_fixed_point(self, float_value: float) -> float:
-        n_bits = self._number_of_bits_per_feature
-        f = (1 << n_bits)
-
-        return np.round(float_value * f) * (1.0 / f)
-
     def _preorder(self, tree_, features, following_splits_IDs, following_splits_compare_values, node):
 
         # if the node is not the end of the path (it is not a leaf)
@@ -538,7 +534,7 @@ class Tree(VHDLcreator):
                 self._current_split_index,
                 features[node],
                 # the raw value has to be change to a fixed point with appropriate number of bits
-                self._convert_to_fixed_point(tree_.threshold[node])
+                convert_to_fixed_point(tree_.threshold[node], self._number_of_bits_per_feature)
             )
 
             # run the code for the left side of the tree (comparision wan not true,
