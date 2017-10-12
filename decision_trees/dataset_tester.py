@@ -10,22 +10,29 @@ from sklearn.tree import DecisionTreeClassifier
 from decision_trees.tree import RandomForest
 from decision_trees.tree import Tree
 
+from decision_trees.utils.convert_to_fixed_point import convert_to_fixed_point
+
 
 class ClassifierType(Enum):
     decision_tree = 1
     random_forest = 2
 
 
+def test_dataset_with_normalization():
+    pass
+
+
 def test_dataset(number_of_bits_per_feature: int,
                  train_data: np.ndarray, train_target: np.ndarray,
                  test_data: np.ndarray, test_target: np.ndarray,
-                 clf_type: ClassifierType
+                 clf_type: ClassifierType,
+                 flag_quantify_before: bool = True
                  ):
     number_of_features = len(train_data[0])
 
     # first create classifier from scikit
     if clf_type == ClassifierType.decision_tree:
-        clf = DecisionTreeClassifier()
+        clf = DecisionTreeClassifier(criterion="gini", max_depth=10, splitter="random")
     elif clf_type == ClassifierType.random_forest:
         clf = RandomForestClassifier()
     else:
@@ -33,6 +40,13 @@ def test_dataset(number_of_bits_per_feature: int,
 
     # TODO - it is necessary for the data to be normalised here
     # TODO - add an option to change the input data to some number of bits so that is can also be compared with full resolution
+    print(len(train_data))
+    print(train_data[:10])
+    if flag_quantify_before:
+        train_data = np.array([convert_to_fixed_point(x, number_of_bits_per_feature) for x in train_data])
+        #test_data = np.array([convert_to_fixed_point(x, number_of_bits_per_feature) for x in test_data])
+    print(train_data[:10])
+    print(len(train_data))
 
     # train classifier and run it on test data, report the results
     clf.fit(train_data, train_target)
@@ -47,7 +61,7 @@ def test_dataset(number_of_bits_per_feature: int,
     my_clf = generate_my_classifier(clf, number_of_features, number_of_bits_per_feature)
 
     # check if own classifier works the same as scikit one
-    compare_with_own_classifier(clf, my_clf, test_data)
+    compare_with_own_classifier(clf, my_clf, test_data, flag_print_details=False)
 
     # optionally check the performance of the scikit classifier for reference (does not work for own classifier)
     test_classification_performance(clf, test_data, 10)
@@ -113,7 +127,7 @@ def generate_my_classifier(clf, number_of_features, number_of_bits_per_feature: 
     return my_clf
 
 
-def compare_with_own_classifier(scikit_clf, own_clf, test_data):
+def compare_with_own_classifier(scikit_clf, own_clf, test_data, flag_print_details: bool = True):
     flag_no_errors = True
     number_of_errors = 0
     for sample in test_data:
@@ -121,9 +135,10 @@ def compare_with_own_classifier(scikit_clf, own_clf, test_data):
         my_result = own_clf.predict(sample)
 
         if scikit_result != my_result:
-            print("Error!")
-            print(scikit_result)
-            print(my_result)
+            if flag_print_details:
+                print("Error!")
+                print(scikit_result)
+                print(my_result)
             number_of_errors += 1
             flag_no_errors = False
 

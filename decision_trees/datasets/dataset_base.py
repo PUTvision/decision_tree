@@ -22,9 +22,10 @@ class DatasetBase(metaclass=abc.ABCMeta):
         train_data = self._normalise(train_data)
         test_data = self._normalise(test_data)
 
-        dataset_tester.test_dataset(4,
+        dataset_tester.test_dataset(1,
                                     train_data, train_target, test_data, test_target,
-                                    dataset_tester.ClassifierType.decision_tree
+                                    dataset_tester.ClassifierType.decision_tree,
+                                    flag_quantify_before=True
                                     )
 
     def run_grid_search(self):
