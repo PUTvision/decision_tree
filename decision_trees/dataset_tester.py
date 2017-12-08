@@ -26,7 +26,7 @@ def test_dataset(number_of_bits_per_feature: int,
                  train_data: np.ndarray, train_target: np.ndarray,
                  test_data: np.ndarray, test_target: np.ndarray,
                  clf_type: ClassifierType,
-                 flag_quantify_before: bool = True
+                 flag_quantize_before: bool = True
                  ):
     number_of_features = len(train_data[0])
 
@@ -40,28 +40,28 @@ def test_dataset(number_of_bits_per_feature: int,
 
     # TODO - it is necessary for the data to be normalised here
     # TODO - add an option to change the input data to some number of bits so that is can also be compared with full resolution
-    print(len(train_data))
-    print(train_data[:10])
-    if flag_quantify_before:
-        train_data = np.array([convert_to_fixed_point(x, number_of_bits_per_feature) for x in train_data])
-        #test_data = np.array([convert_to_fixed_point(x, number_of_bits_per_feature) for x in test_data])
-    print(train_data[:10])
-    print(len(train_data))
 
-    # train classifier and run it on test data, report the results
+    if flag_quantize_before:
+        print("Size before quantization: " + str(len(train_data)))
+        print("First element before quantization:\n" + str(train_data[0]))
+        train_data = np.array([convert_to_fixed_point(x, number_of_bits_per_feature) for x in train_data])
+        # TODO - I think the test data should not be quantized. Even if it is the results should be the same
+        #test_data = np.array([convert_to_fixed_point(x, number_of_bits_per_feature) for x in test_data])
+        print("Size after quantization: " + str(len(train_data)))
+        print("First element after quantization:\n" + str(train_data[0]))
+
+    # train classifier and run it on the test data, report the results
     clf.fit(train_data, train_target)
     test_predicted = clf.predict(test_data)
-
-    print("Detailed classification report:")
-    print("The model is trained on the full development set.")
-    print("The scores are computed on the full evaluation set.")
     report_classifier(clf, test_target, test_predicted)
 
     # generate own classifier based on the one from scikit
     my_clf = generate_my_classifier(clf, number_of_features, number_of_bits_per_feature)
+    my_clf_test_predicted = my_clf.predict(test_data)
+    report_classifier(my_clf, test_target, my_clf_test_predicted)
 
     # check if own classifier works the same as scikit one
-    compare_with_own_classifier(clf, my_clf, test_data, flag_print_details=False)
+    compare_with_own_classifier(clf, my_clf, test_data, test_target, flag_print_details=True)
 
     # optionally check the performance of the scikit classifier for reference (does not work for own classifier)
     test_classification_performance(clf, test_data, 10)
@@ -92,6 +92,8 @@ def normalise_data(train_data: np.ndarray, test_data: np.ndarray):
 
 
 def report_classifier(clf, expected, predicted):
+    print("Detailed classification report:")
+
     print("Classification report for classifier %s:\n%s\n"
           % (clf, metrics.classification_report(expected, predicted)))
     print("Confusion matrix:\n%s" % metrics.confusion_matrix(expected, predicted))
@@ -127,25 +129,42 @@ def generate_my_classifier(clf, number_of_features, number_of_bits_per_feature: 
     return my_clf
 
 
-def compare_with_own_classifier(scikit_clf, own_clf, test_data, flag_print_details: bool = True):
+def compare_with_own_classifier(scikit_clf, own_clf, test_data, test_target, flag_print_details: bool = True):
     flag_no_errors = True
-    number_of_errors = 0
-    for sample in test_data:
+    number_of_scikit_errors = 0
+    number_of_own_clf_errors = 0
+    number_of_own_clf_conv_errors = 0
+    for sample, target in zip(test_data, test_target):
         scikit_result = scikit_clf.predict([sample])
-        my_result = own_clf.predict(sample)
+        my_result = own_clf.predict([sample])
+        my_result_conv = own_clf.predict([convert_to_fixed_point(sample, 2)])
 
-        if scikit_result != my_result:
-            if flag_print_details:
-                print("Error!")
-                print(scikit_result)
-                print(my_result)
-            number_of_errors += 1
+        if [target] != scikit_result:
+            number_of_scikit_errors += 1
             flag_no_errors = False
+        if [target] != my_result:
+            number_of_own_clf_errors += 1
+            flag_no_errors = False
+        if [target] != my_result_conv:
+            number_of_own_clf_conv_errors += 1
+            flag_no_errors = False
+
+        if scikit_result != my_result or \
+                scikit_result != my_result_conv or \
+                my_result != my_result_conv:
+            if flag_print_details:
+                print("Difference between versions!")
+                print("Ground true: " + str(target))
+                print("scikit_result: " + str(scikit_result))
+                print("own_clf: " + str(my_result))
+                print("own_clf_with_input_quantized: " + str(my_result_conv))
 
     if flag_no_errors:
         print("All results were the same")
     else:
-        print("Number of errors: " + str(number_of_errors))
+        print("Number of scikit errors: " + str(number_of_scikit_errors))
+        print("Number of own clf errors: " + str(number_of_own_clf_errors))
+        print("Number of own clf conv errors: " + str(number_of_own_clf_conv_errors))
 
 
 def test_classification_performance(clf, test_data, number_of_data_to_test=1000, number_of_iterations=1000):
@@ -167,6 +186,9 @@ def test_classification_performance(clf, test_data, number_of_data_to_test=1000,
         print("There is not enough data provided to evaluate the performance. It is required to provide at least " +
               str(number_of_data_to_test) + " values.")
 
+
+# TODO(MF): check parafit module for parameters search
+# https://medium.com/mlreview/parfit-hyper-parameter-optimization-77253e7e175e
 
 # this should use the whole data available to find best parameters. So pass both train and test data, find parameters
 # and then retrain with found parameters on train data
