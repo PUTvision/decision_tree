@@ -278,7 +278,15 @@ class Tree(VHDLcreator):
 
         self._preorder(tree.tree_, features, following_splits_IDs, following_splits_compare_values, 0)
 
-    def predict(self, input_data):
+    def predict(self, input_data: np.ndarray) -> np.ndarray:
+        result_data = np.empty(len(input_data))
+
+        for i in range(len(input_data)):
+            result_data[i] = self._predict_one_sample(input_data[i])
+
+        return result_data
+
+    def _predict_one_sample(self, input_data):
         # this code works in a similar way to how vhdl implementation of the tree works
 
         chosen_class_index = [-1]
@@ -529,11 +537,15 @@ class Tree(VHDLcreator):
         if tree_.feature[node] != sklearn.tree._tree.TREE_UNDEFINED:
             following_splits_IDs.append(self._current_split_index)
 
+            print("Feature: " + str(tree_.threshold[node]) + ", after conversion: " +
+                  str(convert_to_fixed_point(tree_.threshold[node], self._number_of_bits_per_feature)))
+
             # then create a split
             self._add_new_split(
                 self._current_split_index,
                 features[node],
                 # the raw value has to be change to a fixed point with appropriate number of bits
+                #tree_.threshold[node]
                 convert_to_fixed_point(tree_.threshold[node], self._number_of_bits_per_feature)
             )
 
