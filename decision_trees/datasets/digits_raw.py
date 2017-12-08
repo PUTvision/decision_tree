@@ -68,8 +68,14 @@ class DigitsRaw(DatasetBase):
 
         train_data = data[:self._number_of_train_samples]
         train_target = digits.target[:self._number_of_train_samples]
-        test_data = data[self._number_of_train_samples:self._number_of_train_samples+self._number_of_test_samples]
-        test_target = digits.target[self._number_of_train_samples:self._number_of_train_samples+self._number_of_test_samples]
+        test_data = data[
+                    self._number_of_train_samples:
+                    self._number_of_train_samples+self._number_of_test_samples
+                    ]
+        test_target = digits.target[
+                      self._number_of_train_samples:
+                      self._number_of_train_samples+self._number_of_test_samples
+                      ]
 
         return train_data, train_target, test_data, test_target
 
@@ -99,6 +105,7 @@ def test_digits_raw():
     d.run()
 
     assert True
+
 
 if __name__ == "__main__":
     #sample_from_scikit()

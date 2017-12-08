@@ -16,9 +16,8 @@ class MnistRaw(DatasetBase):
         # print(mnist.target.shape)
         # print(np.unique(mnist.target))
 
-        # TODO - is this enough or should I use my own function?
+        # it is necessary to shuffle the data as all 0's are at the front and all 9's are at the end
         mnist.data, mnist.target = shuffle(mnist.data, mnist.target)
-        # shuffle_data_and_target(mnist.data, mnist.target)
 
         train_data = mnist.data[:self._number_of_train_samples]
         train_target = mnist.target[:self._number_of_train_samples]

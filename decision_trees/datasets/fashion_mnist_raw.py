@@ -47,6 +47,7 @@ def test_mnist_raw():
 
     assert True
 
+
 if __name__ == "__main__":
     d = FashionMnistRaw()
 

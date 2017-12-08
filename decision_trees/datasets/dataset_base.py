@@ -9,12 +9,12 @@ from decision_trees import dataset_tester
 class DatasetBase(metaclass=abc.ABCMeta):
     @abc.abstractmethod
     def _load_data(self) -> Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
-        ...
+        pass
 
     @staticmethod
     @abc.abstractmethod
-    def _normalise(data: np.ndarray):
-        ...
+    def _normalise(data: np.ndarray) -> np.ndarray:
+        pass
 
     def run(self):
         train_data, train_target, test_data, test_target = self._load_data()
@@ -22,10 +22,10 @@ class DatasetBase(metaclass=abc.ABCMeta):
         train_data = self._normalise(train_data)
         test_data = self._normalise(test_data)
 
-        dataset_tester.test_dataset(1,
+        dataset_tester.test_dataset(8,
                                     train_data, train_target, test_data, test_target,
                                     dataset_tester.ClassifierType.decision_tree,
-                                    flag_quantify_before=True
+                                    flag_quantize_before=False
                                     )
 
     def run_grid_search(self):
