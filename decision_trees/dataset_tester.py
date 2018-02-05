@@ -38,30 +38,56 @@ def test_dataset(number_of_bits_per_feature: int,
     else:
         raise ValueError("Unknown classifier type specified")
 
-    # TODO - it is necessary for the data to be normalised here
-    # TODO - add an option to change the input data to some number of bits so that is can also be compared with full resolution
+    # first - train the classifiers on non-quantized data
 
-    if flag_quantize_before:
-        print("Size before quantization: " + str(len(train_data)))
-        print("First element before quantization:\n" + str(train_data[0]))
-        train_data = np.array([convert_to_fixed_point(x, number_of_bits_per_feature) for x in train_data])
-        # TODO - I think the test data should not be quantized. Even if it is the results should be the same
-        #test_data = np.array([convert_to_fixed_point(x, number_of_bits_per_feature) for x in test_data])
-        print("Size after quantization: " + str(len(train_data)))
-        print("First element after quantization:\n" + str(train_data[0]))
+    print("Non-quantized approach:")
 
-    # train classifier and run it on the test data, report the results
     clf.fit(train_data, train_target)
     test_predicted = clf.predict(test_data)
+    print("scikit clf with test data:")
+    report_classifier(clf, test_target, test_predicted)
+
+    # perform quantization of train and test data
+    train_data_quantized = np.array([convert_to_fixed_point(x, number_of_bits_per_feature) for x in train_data])
+    # TODO - decide what to do with the test data. Should it be quantized or not? I think the test data should not be quantized. Even if it is the results should be the same
+    test_data_quantized = np.array([convert_to_fixed_point(x, number_of_bits_per_feature) for x in test_data])
+
+    with open("quantization_comparision.txt", "w") as file_quantization:
+        print("Size before quantization: " + str(len(train_data)), file=file_quantization)
+        print("First element before quantization:\n" + str(train_data[0]), file=file_quantization)
+        print("Size after quantization: " + str(len(train_data_quantized)), file=file_quantization)
+        print("First element after quantization:\n" + str(train_data_quantized[0]), file=file_quantization)
+
+    print("Quantization of train data:")
+    clf.fit(train_data_quantized, train_target)
+    test_predicted = clf.predict(test_data)
+    print("scikit clf with test data:")
     report_classifier(clf, test_target, test_predicted)
 
     # generate own classifier based on the one from scikit
     my_clf = generate_my_classifier(clf, number_of_features, number_of_bits_per_feature)
     my_clf_test_predicted = my_clf.predict(test_data)
+    print("own clf with test data:")
     report_classifier(my_clf, test_target, my_clf_test_predicted)
 
+    print("Quantization of train and test data:")
+    test_predicted_quantized = clf.predict(test_data_quantized)
+    print("scikit clf with test data quantized:")
+    report_classifier(clf, test_target, test_predicted_quantized)
+
+    my_clf_test_predicted_quantized = my_clf.predict(test_data_quantized)
+    print("own clf with test data quantized:")
+    report_classifier(my_clf, test_target, my_clf_test_predicted_quantized)
+
+    # TODO - it is necessary for the data to be normalised here
+    # TODO - add an option to change the input data to some number of bits so that is can also be compared with full resolution
+
     # check if own classifier works the same as scikit one
-    compare_with_own_classifier(clf, my_clf, test_data, test_target, flag_print_details=True)
+    compare_with_own_classifier(
+        [test_predicted, my_clf_test_predicted, test_predicted_quantized, my_clf_test_predicted_quantized],
+        ["scikit", "scikit_with_input_quantized", "own_clf", "own_clf_with_input_quantized"],
+        test_target, flag_save_details_to_file=True
+    )
 
     # optionally check the performance of the scikit classifier for reference (does not work for own classifier)
     test_classification_performance(clf, test_data, 10)
@@ -129,42 +155,38 @@ def generate_my_classifier(clf, number_of_features, number_of_bits_per_feature: 
     return my_clf
 
 
-def compare_with_own_classifier(scikit_clf, own_clf, test_data, test_target, flag_print_details: bool = True):
+def compare_with_own_classifier(results: [], results_names: [str],
+                                test_target,
+                                flag_save_details_to_file: bool = True
+                                ):
     flag_no_errors = True
-    number_of_scikit_errors = 0
-    number_of_own_clf_errors = 0
-    number_of_own_clf_conv_errors = 0
-    for sample, target in zip(test_data, test_target):
-        scikit_result = scikit_clf.predict([sample])
-        my_result = own_clf.predict([sample])
-        my_result_conv = own_clf.predict([convert_to_fixed_point(sample, 2)])
 
-        if [target] != scikit_result:
-            number_of_scikit_errors += 1
-            flag_no_errors = False
-        if [target] != my_result:
-            number_of_own_clf_errors += 1
-            flag_no_errors = False
-        if [target] != my_result_conv:
-            number_of_own_clf_conv_errors += 1
-            flag_no_errors = False
+    number_of_errors = np.zeros(len(results))
 
-        if scikit_result != my_result or \
-                scikit_result != my_result_conv or \
-                my_result != my_result_conv:
-            if flag_print_details:
-                print("Difference between versions!")
-                print("Ground true: " + str(target))
-                print("scikit_result: " + str(scikit_result))
-                print("own_clf: " + str(my_result))
-                print("own_clf_with_input_quantized: " + str(my_result_conv))
+    comparision_file = None
+    if flag_save_details_to_file:
+        comparision_file = open("comparision_details.txt", "w")
+
+    for result, target in zip(results, test_target):
+        flag_iteration_error = False
+
+        for i in range(0, len(results)):
+            if result[i] != target:
+                number_of_errors[i] += 1
+                flag_no_errors = False
+                flag_iteration_error = True
+
+        if flag_iteration_error and flag_save_details_to_file:
+            print("Difference between versions!", file=comparision_file)
+            print("Ground true: " + str(target), file=comparision_file)
+            for i in range(0, len(results)):
+                print(f"{results_names[i]}: {result[i]}", file=comparision_file)
 
     if flag_no_errors:
         print("All results were the same")
     else:
-        print("Number of scikit errors: " + str(number_of_scikit_errors))
-        print("Number of own clf errors: " + str(number_of_own_clf_errors))
-        print("Number of own clf conv errors: " + str(number_of_own_clf_conv_errors))
+        for i in range(0, len(results)):
+            print(f"Number of {results_names[i]} errors: {number_of_errors[i]}")
 
 
 def test_classification_performance(clf, test_data, number_of_data_to_test=1000, number_of_iterations=1000):

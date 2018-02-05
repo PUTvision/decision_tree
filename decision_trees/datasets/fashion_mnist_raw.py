@@ -53,14 +53,15 @@ if __name__ == "__main__":
 
     train_data, train_target, test_data, test_target = d._load_data()
 
-    print(train_data.shape)
-    print(np.unique(test_target))
+    print(f"train_data.shape: {train_data.shape}")
+    print(f"np.unique(test_target): {np.unique(test_target)}")
 
     train_data = d._normalise(train_data)
     test_data = d._normalise(test_data)
 
     from decision_trees import dataset_tester
-    dataset_tester.test_dataset(10,
+    dataset_tester.test_dataset(0,
                                 train_data[:60000], train_target[:60000], test_data[:10000], test_target[:10000],
-                                dataset_tester.ClassifierType.decision_tree
+                                dataset_tester.ClassifierType.decision_tree,
+                                flag_quantize_before=True
                                 )

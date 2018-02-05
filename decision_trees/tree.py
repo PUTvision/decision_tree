@@ -537,8 +537,9 @@ class Tree(VHDLcreator):
         if tree_.feature[node] != sklearn.tree._tree.TREE_UNDEFINED:
             following_splits_IDs.append(self._current_split_index)
 
-            print("Feature: " + str(tree_.threshold[node]) + ", after conversion: " +
-                  str(convert_to_fixed_point(tree_.threshold[node], self._number_of_bits_per_feature)))
+            # use this to print the features before and after the conversion to fixed point
+            #print("Feature: " + str(tree_.threshold[node]) + ", after conversion: " +
+                  #str(convert_to_fixed_point(tree_.threshold[node], self._number_of_bits_per_feature)))
 
             # then create a split
             self._add_new_split(

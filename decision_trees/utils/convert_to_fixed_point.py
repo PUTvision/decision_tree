@@ -16,7 +16,7 @@ if __name__ == "__main__":
     value = 13 / 16
     print(value)
 
-    for i in range(10, 0, -1):
+    for i in range(10, -1, -1):
         value_as_fixed_point = convert_to_fixed_point(value, i)
         print("Number of bits used: " + str(i) + " value: " + str(value_as_fixed_point))
         print("% error: {0:.2f}".format(abs(value - value_as_fixed_point) / value * 100))
