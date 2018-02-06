@@ -60,8 +60,7 @@ if __name__ == "__main__":
     test_data = d._normalise(test_data)
 
     from decision_trees import dataset_tester
-    dataset_tester.test_dataset(0,
+    dataset_tester.test_dataset(4,
                                 train_data[:60000], train_target[:60000], test_data[:10000], test_target[:10000],
                                 dataset_tester.ClassifierType.decision_tree,
-                                flag_quantize_before=True
                                 )

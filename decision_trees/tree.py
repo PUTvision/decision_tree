@@ -545,8 +545,6 @@ class Tree(VHDLcreator):
             self._add_new_split(
                 self._current_split_index,
                 features[node],
-                # the raw value has to be change to a fixed point with appropriate number of bits
-                #tree_.threshold[node]
                 convert_to_fixed_point(tree_.threshold[node], self._number_of_bits_per_feature)
             )
 

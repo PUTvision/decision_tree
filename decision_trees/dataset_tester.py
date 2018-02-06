@@ -18,15 +18,10 @@ class ClassifierType(Enum):
     random_forest = 2
 
 
-def test_dataset_with_normalization():
-    pass
-
-
 def test_dataset(number_of_bits_per_feature: int,
                  train_data: np.ndarray, train_target: np.ndarray,
                  test_data: np.ndarray, test_target: np.ndarray,
                  clf_type: ClassifierType,
-                 flag_quantize_before: bool = True
                  ):
     number_of_features = len(train_data[0])
 
@@ -39,7 +34,6 @@ def test_dataset(number_of_bits_per_feature: int,
         raise ValueError("Unknown classifier type specified")
 
     # first - train the classifiers on non-quantized data
-
     print("Non-quantized approach:")
 
     clf.fit(train_data, train_target)
@@ -48,9 +42,12 @@ def test_dataset(number_of_bits_per_feature: int,
     report_classifier(clf, test_target, test_predicted)
 
     # perform quantization of train and test data
+    # while at some point I was considering not quantizing the test data, I came to a conclusion that it is not the way it will be performed in hardware
     train_data_quantized = np.array([convert_to_fixed_point(x, number_of_bits_per_feature) for x in train_data])
-    # TODO - decide what to do with the test data. Should it be quantized or not? I think the test data should not be quantized. Even if it is the results should be the same
     test_data_quantized = np.array([convert_to_fixed_point(x, number_of_bits_per_feature) for x in test_data])
+
+    print("Parfit test")
+    parfit_gridsearch(train_data_quantized, train_target, test_data_quantized, test_target)
 
     with open("quantization_comparision.txt", "w") as file_quantization:
         print("Size before quantization: " + str(len(train_data)), file=file_quantization)
@@ -58,63 +55,27 @@ def test_dataset(number_of_bits_per_feature: int,
         print("Size after quantization: " + str(len(train_data_quantized)), file=file_quantization)
         print("First element after quantization:\n" + str(train_data_quantized[0]), file=file_quantization)
 
-    print("Quantization of train data:")
+    print("Quantization of data:")
     clf.fit(train_data_quantized, train_target)
-    test_predicted = clf.predict(test_data)
-    print("scikit clf with test data:")
-    report_classifier(clf, test_target, test_predicted)
-
-    # generate own classifier based on the one from scikit
-    my_clf = generate_my_classifier(clf, number_of_features, number_of_bits_per_feature)
-    my_clf_test_predicted = my_clf.predict(test_data)
-    print("own clf with test data:")
-    report_classifier(my_clf, test_target, my_clf_test_predicted)
-
-    print("Quantization of train and test data:")
     test_predicted_quantized = clf.predict(test_data_quantized)
-    print("scikit clf with test data quantized:")
+    print("scikit clf with train and test data quantized:")
     report_classifier(clf, test_target, test_predicted_quantized)
 
+    # generate own classifier based on the one from scikit
+    my_clf = generate_my_classifier(clf, number_of_features, number_of_bits_per_feature+1)
     my_clf_test_predicted_quantized = my_clf.predict(test_data_quantized)
-    print("own clf with test data quantized:")
+    print("own clf with train and test data quantized:")
     report_classifier(my_clf, test_target, my_clf_test_predicted_quantized)
-
-    # TODO - it is necessary for the data to be normalised here
-    # TODO - add an option to change the input data to some number of bits so that is can also be compared with full resolution
 
     # check if own classifier works the same as scikit one
     compare_with_own_classifier(
-        [test_predicted, my_clf_test_predicted, test_predicted_quantized, my_clf_test_predicted_quantized],
-        ["scikit", "scikit_with_input_quantized", "own_clf", "own_clf_with_input_quantized"],
+        [test_predicted, test_predicted_quantized, my_clf_test_predicted_quantized],
+        ["scikit", "scikit_quantized", "own_clf_quantized"],
         test_target, flag_save_details_to_file=True
     )
 
     # optionally check the performance of the scikit classifier for reference (does not work for own classifier)
     test_classification_performance(clf, test_data, 10)
-
-
-# TODO - WIP, chose one version and test it thoroughly
-def normalise_data(train_data: np.ndarray, test_data: np.ndarray):
-    from sklearn import preprocessing
-
-    print("np.max(train_data): " + str(np.max(train_data)))
-    print("np.ptp(train_data): " + str(np.ptp(train_data)))
-
-    normalised_1 = 1 - (train_data - np.max(train_data)) / -np.ptp(train_data)
-    normalised_2 = preprocessing.minmax_scale(train_data, axis=1)
-
-    print(train_data[0])
-
-    train_data /= 16
-    test_data /= 16
-
-    print("Are arrays equal: " + str(np.array_equal(normalised_2, train_data)))
-    print("Are arrays equal: " + str(np.array_equal(normalised_1, train_data)))
-
-    for i in range(0, 1):
-        print(train_data[i])
-        print(normalised_1)
-        print(normalised_2)
 
 
 def report_classifier(clf, expected, predicted):
@@ -160,27 +121,26 @@ def compare_with_own_classifier(results: [], results_names: [str],
                                 flag_save_details_to_file: bool = True
                                 ):
     flag_no_errors = True
-
     number_of_errors = np.zeros(len(results))
 
     comparision_file = None
     if flag_save_details_to_file:
         comparision_file = open("comparision_details.txt", "w")
 
-    for result, target in zip(results, test_target):
+    for j in range(0, len(test_target)):
         flag_iteration_error = False
 
         for i in range(0, len(results)):
-            if result[i] != target:
+            if results[i][j] != test_target[j]:
                 number_of_errors[i] += 1
                 flag_no_errors = False
                 flag_iteration_error = True
 
         if flag_iteration_error and flag_save_details_to_file:
             print("Difference between versions!", file=comparision_file)
-            print("Ground true: " + str(target), file=comparision_file)
+            print("Ground true: " + str(test_target[j]), file=comparision_file)
             for i in range(0, len(results)):
-                print(f"{results_names[i]}: {result[i]}", file=comparision_file)
+                print(f"{results_names[i]}: {results[i][j]}", file=comparision_file)
 
     if flag_no_errors:
         print("All results were the same")
@@ -209,7 +169,7 @@ def test_classification_performance(clf, test_data, number_of_data_to_test=1000,
               str(number_of_data_to_test) + " values.")
 
 
-# TODO(MF): check parafit module for parameters search
+# TODO(MF): check parfit module for parameters search
 # https://medium.com/mlreview/parfit-hyper-parameter-optimization-77253e7e175e
 
 # this should use the whole data available to find best parameters. So pass both train and test data, find parameters
@@ -266,3 +226,54 @@ def grid_search(data: np.ndarray, target: np.ndarray, clf_type: ClassifierType):
             print("%0.3f (+/-%0.03f) for %r"
                   % (mean, std * 2, params))
         print()
+
+
+from parfit.parfit import bestFit, plotScores
+from sklearn.model_selection import ParameterGrid
+from sklearn.metrics import *
+
+def parfit_gridsearch(
+        train_data: np.ndarray, train_target: np.ndarray,
+        test_data: np.ndarray, test_target: np.ndarray
+):
+    grid = {
+        'n_estimators': [5, 10],
+        # criterion
+        'max_features': ['sqrt', 'log2'],
+        #'min_samples_leaf': [1, 5, 10, 25, 50, 100, 125, 150, 175, 200],
+        # max_depth
+        'class_weight': [None],#, 'balanced'],
+        'n_jobs': [-1],
+        'random_state': [42]
+    }
+    paramGrid = ParameterGrid(grid)
+
+    best_model, best_score, all_models, all_scores = bestFit(RandomForestClassifier, paramGrid,
+                                                             train_data, train_target, test_data, test_target,
+                                                             metric=f1_score, bestScore='max', scoreLabel='f1')
+
+    print(best_model)
+    plotScores(all_scores, paramGrid, 'f1')
+
+# there is no general method for normalisation, so it was moved to be a part of each dataset
+def normalise_data(train_data: np.ndarray, test_data: np.ndarray):
+    from sklearn import preprocessing
+
+    print("np.max(train_data): " + str(np.max(train_data)))
+    print("np.ptp(train_data): " + str(np.ptp(train_data)))
+
+    normalised_1 = 1 - (train_data - np.max(train_data)) / -np.ptp(train_data)
+    normalised_2 = preprocessing.minmax_scale(train_data, axis=1)
+
+    print(train_data[0])
+
+    train_data /= 16
+    test_data /= 16
+
+    print("Are arrays equal: " + str(np.array_equal(normalised_2, train_data)))
+    print("Are arrays equal: " + str(np.array_equal(normalised_1, train_data)))
+
+    for i in range(0, 1):
+        print(train_data[i])
+        print(normalised_1)
+        print(normalised_2)
