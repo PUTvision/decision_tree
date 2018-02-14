@@ -27,9 +27,9 @@ def test_dataset(number_of_bits_per_feature: int,
 
     # first create classifier from scikit
     if clf_type == ClassifierType.decision_tree:
-        clf = DecisionTreeClassifier(criterion="gini", max_depth=10, splitter="random")
+        clf = DecisionTreeClassifier(criterion="gini", max_depth=None, splitter="random", n_jobs=3)
     elif clf_type == ClassifierType.random_forest:
-        clf = RandomForestClassifier()
+        clf = RandomForestClassifier(n_estimators=100, max_depth=None, n_jobs=3)
     else:
         raise ValueError("Unknown classifier type specified")
 
@@ -46,8 +46,11 @@ def test_dataset(number_of_bits_per_feature: int,
     train_data_quantized = np.array([convert_to_fixed_point(x, number_of_bits_per_feature) for x in train_data])
     test_data_quantized = np.array([convert_to_fixed_point(x, number_of_bits_per_feature) for x in test_data])
 
-    print("Parfit test")
-    parfit_gridsearch(train_data_quantized, train_target, test_data_quantized, test_target)
+    #print("Gridsearch")
+    #grid_search(train_data_quantized, train_target, ClassifierType.decision_tree)
+
+    #print("Parfit test")
+    #parfit_gridsearch(train_data_quantized, train_target, test_data_quantized, test_target)
 
     with open("quantization_comparision.txt", "w") as file_quantization:
         print("Size before quantization: " + str(len(train_data)), file=file_quantization)
@@ -85,16 +88,14 @@ def report_classifier(clf, expected, predicted):
           % (clf, metrics.classification_report(expected, predicted)))
     print("Confusion matrix:\n%s" % metrics.confusion_matrix(expected, predicted))
 
-    correct_classifications = 0
-    incorrect_classifications = 0
-    for e, p in zip(expected, predicted):
-        if e == p:
-            correct_classifications += 1
-        else:
-            incorrect_classifications += 1
-    print("Accuracy overall: " +
-          '% 2.4f' % (correct_classifications / (correct_classifications + incorrect_classifications))
-          )
+    f1_score = metrics.f1_score(expected, predicted, average='weighted')
+    precision = metrics.precision_score(expected, predicted, average='weighted')
+    recall = metrics.recall_score(expected, predicted, average='weighted')
+    accuracy = metrics.accuracy_score(expected, predicted)
+    print(f"f1_score: {f1_score:{2}.{4}}")
+    print(f"precision: {precision:{2}.{4}}")
+    print(f"recall: {recall:{2}.{4}}")
+    print(f"accuracy: {accuracy:{2}.{4}}")
 
 
 def generate_my_classifier(clf, number_of_features, number_of_bits_per_feature: int):
@@ -169,9 +170,6 @@ def test_classification_performance(clf, test_data, number_of_data_to_test=1000,
               str(number_of_data_to_test) + " values.")
 
 
-# TODO(MF): check parfit module for parameters search
-# https://medium.com/mlreview/parfit-hyper-parameter-optimization-77253e7e175e
-
 # this should use the whole data available to find best parameters. So pass both train and test data, find parameters
 # and then retrain with found parameters on train data
 def grid_search(data: np.ndarray, target: np.ndarray, clf_type: ClassifierType):
@@ -186,16 +184,20 @@ def grid_search(data: np.ndarray, target: np.ndarray, clf_type: ClassifierType):
     # in general best results are obtained using min_samples_split=2 (default)
 
     if clf_type == ClassifierType.decision_tree:
-        tuned_parameters = [{'max_depth': [5, 10, 15, 20, 30, 40, 50, 60, 70, 80, 90, 100, None],
+        tuned_parameters = [{'max_depth': [10, 100],#[5, 10, 15, 20, 30, 40, 50, 60, 70, 80, 90, 100, None],
                              'splitter': ["best", "random"],
-                             'min_samples_split': [2, 3, 4, 5, 6, 7, 8, 9, 10, 15, 20]
+                             'min_samples_split': [2],#, 3, 4, 5, 6, 7, 8, 9, 10, 15, 20]
                              #'min_samples_split': [0.001, 0.002, 0.003, 0.004, 0.005, 0.01, 0.02, 0.05]
+                             'n_jobs': [-1],
+                             'random_state': [42]
                              }]
     elif clf_type == ClassifierType.random_forest:
         tuned_parameters = [{'max_depth': [5, 10, 20, 35, 50, 70, 100, None],
                              'n_estimators': [5, 10, 20, 35, 50, 70, 100],
-                             'min_samples_split': [2, 3, 4, 5, 10]#, 20]
+                             'min_samples_split': [2, 3, 4, 5, 10],#, 20]
                              #'min_samples_split': [2, 3, 4, 5, 6, 7, 8, 9, 10, 15, 20, 30, 40, 50, 75, 100]
+                             'n_jobs': [-1],
+                             'random_state': [42]
                              }]
 
     else:
@@ -206,9 +208,9 @@ def grid_search(data: np.ndarray, target: np.ndarray, clf_type: ClassifierType):
         print()
 
         if clf_type == ClassifierType.decision_tree:
-            clf = GridSearchCV(DecisionTreeClassifier(), tuned_parameters, cv=5, scoring='%s' % score, n_jobs=-1)
+            clf = GridSearchCV(DecisionTreeClassifier(), tuned_parameters, cv=5, scoring=f'{score}', n_jobs=3)
         elif clf_type == ClassifierType.random_forest:
-            clf = GridSearchCV(RandomForestClassifier(), tuned_parameters, cv=5, scoring='%s' % score, n_jobs=-1)
+            clf = GridSearchCV(RandomForestClassifier(), tuned_parameters, cv=5, scoring=f'{score}', n_jobs=3)
         else:
             raise ValueError("Unknown classifier type specified")
 
@@ -232,16 +234,19 @@ from parfit.parfit import bestFit, plotScores
 from sklearn.model_selection import ParameterGrid
 from sklearn.metrics import *
 
+
+# TODO(MF): check parfit module for parameters search
+# https://medium.com/mlreview/parfit-hyper-parameter-optimization-77253e7e175e
 def parfit_gridsearch(
         train_data: np.ndarray, train_target: np.ndarray,
         test_data: np.ndarray, test_target: np.ndarray
 ):
     grid = {
-        'n_estimators': [5, 10],
+        'n_estimators': [5, 10, 20, 35, 50, 70, 100],
         # criterion
-        'max_features': ['sqrt', 'log2'],
+        #'max_features': ['sqrt', 'log2'],
         #'min_samples_leaf': [1, 5, 10, 25, 50, 100, 125, 150, 175, 200],
-        # max_depth
+        'max_depth': [5, 10, 20, 35, 50, 70, 100, None],
         'class_weight': [None],#, 'balanced'],
         'n_jobs': [-1],
         'random_state': [42]
@@ -250,7 +255,7 @@ def parfit_gridsearch(
 
     best_model, best_score, all_models, all_scores = bestFit(RandomForestClassifier, paramGrid,
                                                              train_data, train_target, test_data, test_target,
-                                                             metric=f1_score, bestScore='max', scoreLabel='f1')
+                                                             metric=accuracy_score, bestScore='max', scoreLabel='f1')
 
     print(best_model)
     plotScores(all_scores, paramGrid, 'f1')
