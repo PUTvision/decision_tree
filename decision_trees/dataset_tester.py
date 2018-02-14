@@ -18,16 +18,29 @@ class ClassifierType(Enum):
     random_forest = 2
 
 
+def perform_experiment(train_data: np.ndarray, train_target: np.ndarray,
+                       test_data: np.ndarray, test_target: np.ndarray,
+                       number_of_bits_per_feature_max: int
+                 ):
+    # first train on the non-qunatized data
+    grid_search(train_data, train_target, ClassifierType.decision_tree)
+    # repeat on quantized data
+    for i in range(number_of_bits_per_feature_max, 0, -1):
+        train_data_quantized, test_data_quantized = quantize_data(train_data, test_data, i)
+
+        grid_search(train_data_quantized, train_target, ClassifierType.decision_tree)
+
+
+
+
 def test_dataset(number_of_bits_per_feature: int,
                  train_data: np.ndarray, train_target: np.ndarray,
                  test_data: np.ndarray, test_target: np.ndarray,
                  clf_type: ClassifierType,
                  ):
-    number_of_features = len(train_data[0])
-
     # first create classifier from scikit
     if clf_type == ClassifierType.decision_tree:
-        clf = DecisionTreeClassifier(criterion="gini", max_depth=None, splitter="random", n_jobs=3)
+        clf = DecisionTreeClassifier(criterion="gini", max_depth=None, splitter="random")
     elif clf_type == ClassifierType.random_forest:
         clf = RandomForestClassifier(n_estimators=100, max_depth=None, n_jobs=3)
     else:
@@ -43,20 +56,13 @@ def test_dataset(number_of_bits_per_feature: int,
 
     # perform quantization of train and test data
     # while at some point I was considering not quantizing the test data, I came to a conclusion that it is not the way it will be performed in hardware
-    train_data_quantized = np.array([convert_to_fixed_point(x, number_of_bits_per_feature) for x in train_data])
-    test_data_quantized = np.array([convert_to_fixed_point(x, number_of_bits_per_feature) for x in test_data])
+    train_data_quantized, test_data_quantized = quantize_data(train_data, test_data, number_of_bits_per_feature)
 
     #print("Gridsearch")
     #grid_search(train_data_quantized, train_target, ClassifierType.decision_tree)
 
     #print("Parfit test")
     #parfit_gridsearch(train_data_quantized, train_target, test_data_quantized, test_target)
-
-    with open("quantization_comparision.txt", "w") as file_quantization:
-        print("Size before quantization: " + str(len(train_data)), file=file_quantization)
-        print("First element before quantization:\n" + str(train_data[0]), file=file_quantization)
-        print("Size after quantization: " + str(len(train_data_quantized)), file=file_quantization)
-        print("First element after quantization:\n" + str(train_data_quantized[0]), file=file_quantization)
 
     print("Quantization of data:")
     clf.fit(train_data_quantized, train_target)
@@ -65,6 +71,7 @@ def test_dataset(number_of_bits_per_feature: int,
     report_classifier(clf, test_target, test_predicted_quantized)
 
     # generate own classifier based on the one from scikit
+    number_of_features = len(train_data[0])
     my_clf = generate_my_classifier(clf, number_of_features, number_of_bits_per_feature+1)
     my_clf_test_predicted_quantized = my_clf.predict(test_data_quantized)
     print("own clf with train and test data quantized:")
@@ -96,6 +103,19 @@ def report_classifier(clf, expected, predicted):
     print(f"precision: {precision:{2}.{4}}")
     print(f"recall: {recall:{2}.{4}}")
     print(f"accuracy: {accuracy:{2}.{4}}")
+
+
+def quantize_data(train_data: np.ndarray, test_data: np.ndarray, number_of_bits: int):
+    train_data_quantized = np.array([convert_to_fixed_point(x, number_of_bits) for x in train_data])
+    test_data_quantized = np.array([convert_to_fixed_point(x, number_of_bits) for x in test_data])
+
+    # with open("quantization_comparision.txt", "w") as file_quantization:
+    #     print("Size before quantization: " + str(len(train_data)), file=file_quantization)
+    #     print("First element before quantization:\n" + str(train_data[0]), file=file_quantization)
+    #     print("Size after quantization: " + str(len(train_data_quantized)), file=file_quantization)
+    #     print("First element after quantization:\n" + str(train_data_quantized[0]), file=file_quantization)
+
+    return train_data_quantized, test_data_quantized
 
 
 def generate_my_classifier(clf, number_of_features, number_of_bits_per_feature: int):
@@ -188,7 +208,6 @@ def grid_search(data: np.ndarray, target: np.ndarray, clf_type: ClassifierType):
                              'splitter': ["best", "random"],
                              'min_samples_split': [2],#, 3, 4, 5, 6, 7, 8, 9, 10, 15, 20]
                              #'min_samples_split': [0.001, 0.002, 0.003, 0.004, 0.005, 0.01, 0.02, 0.05]
-                             'n_jobs': [-1],
                              'random_state': [42]
                              }]
     elif clf_type == ClassifierType.random_forest:
@@ -242,11 +261,12 @@ def parfit_gridsearch(
         test_data: np.ndarray, test_target: np.ndarray
 ):
     grid = {
-        'n_estimators': [5, 10, 20, 35, 50, 70, 100],
+        'n_estimators': [10, 20],#, 50, 100],
         # criterion
         #'max_features': ['sqrt', 'log2'],
         #'min_samples_leaf': [1, 5, 10, 25, 50, 100, 125, 150, 175, 200],
-        'max_depth': [5, 10, 20, 35, 50, 70, 100, None],
+        'max_depth': [10, 20],#, 50, 100, None],
+        #'min_samples_split': [2, 5],#, 10],
         'class_weight': [None],#, 'balanced'],
         'n_jobs': [-1],
         'random_state': [42]
@@ -255,10 +275,10 @@ def parfit_gridsearch(
 
     best_model, best_score, all_models, all_scores = bestFit(RandomForestClassifier, paramGrid,
                                                              train_data, train_target, test_data, test_target,
-                                                             metric=accuracy_score, bestScore='max', scoreLabel='f1')
+                                                             metric=accuracy_score, bestScore='max', scoreLabel='f1_weighted')
 
     print(best_model)
-    plotScores(all_scores, paramGrid, 'f1')
+    #plotScores(all_scores, paramGrid, 'f1_weighted')
 
 # there is no general method for normalisation, so it was moved to be a part of each dataset
 def normalise_data(train_data: np.ndarray, test_data: np.ndarray):
