@@ -1,19 +1,19 @@
 import numpy as np
 from sklearn.utils import shuffle
-import sys
-
-sys.path.insert(0, './../../submodules/fashion-mnist/')
-from utils.mnist_reader import load_mnist
-
+from typing import Tuple
 
 from decision_trees.datasets.dataset_base import DatasetBase
+
+import sys
+sys.path.insert(0, './../../submodules/fashion-mnist/')
+from utils.mnist_reader import load_mnist
 
 
 class FashionMnistRaw(DatasetBase):
     def __init__(self):
         ...
 
-    def _load_data(self):
+    def _load_data(self) -> Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
         X_train, y_train = load_mnist('./../../submodules/fashion-mnist/data/fashion', kind='train')
         X_test, y_test = load_mnist('./../../submodules/fashion-mnist/data/fashion/', kind='t10k')
 
@@ -60,7 +60,13 @@ if __name__ == "__main__":
     test_data = d._normalise(test_data)
 
     from decision_trees import dataset_tester
-    dataset_tester.test_dataset(4,
-                                train_data[:60000], train_target[:60000], test_data[:10000], test_target[:10000],
-                                dataset_tester.ClassifierType.decision_tree,
-                                )
+
+    dataset_tester.perform_experiment(train_data[:600], train_target[:600],
+                                      test_data[:100], test_target[:100],
+                                      8-1
+                                      )
+
+    # dataset_tester.test_dataset(4,
+    #                             train_data[:6000], train_target[:6000], test_data[:1000], test_target[:1000],
+    #                             dataset_tester.ClassifierType.decision_tree,
+    #                             )
