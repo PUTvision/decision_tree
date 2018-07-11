@@ -25,7 +25,6 @@ class DatasetBase(metaclass=abc.ABCMeta):
         dataset_tester.test_dataset(8,
                                     train_data, train_target, test_data, test_target,
                                     dataset_tester.ClassifierType.decision_tree,
-                                    flag_quantize_before=False
                                     )
 
     def run_grid_search(self):

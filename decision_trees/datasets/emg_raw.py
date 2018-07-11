@@ -78,3 +78,30 @@ class EMGRaw(DatasetBase):
         data[:, 8:] = (data[:, 8:] - self._min_zero_crossings) / (self._max_zero_crossings - self._min_zero_crossings)
 
         return data
+
+
+if __name__ == "__main__":
+    d = EMGRaw("./../../data/EMG/")
+
+    train_data, train_target, test_data, test_target = d._load_data()
+
+    print(f"train_data.shape: {train_data.shape}")
+    print(f"test_data.shape: {test_data.shape}")
+    print(f"np.unique(train_target): {np.unique(train_target)}")
+    print(f"np.unique(test_target): {np.unique(test_target)}")
+
+    train_data = d._normalise(train_data)
+    test_data = d._normalise(test_data)
+
+    from decision_trees import dataset_tester
+
+    dataset_tester.perform_experiment(train_data[:600], train_target[:600],
+                                      test_data[:100], test_target[:100],
+                                      8-1
+                                      )
+
+    # dataset_tester.test_dataset(8,
+    #                             train_data[:19000], train_target[:19000],
+    #                             test_data[:10000], test_target[:10000],
+    #                             dataset_tester.ClassifierType.random_forest,
+    #                             )
