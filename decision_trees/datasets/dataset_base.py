@@ -24,7 +24,7 @@ class DatasetBase(metaclass=abc.ABCMeta):
 
         dataset_tester.test_dataset(8,
                                     train_data, train_target, test_data, test_target,
-                                    dataset_tester.ClassifierType.decision_tree,
+                                    dataset_tester.ClassifierType.DECISION_TREE,
                                     )
 
     def run_grid_search(self):
@@ -35,5 +35,5 @@ class DatasetBase(metaclass=abc.ABCMeta):
 
         dataset_tester.grid_search(np.concatenate((train_data, test_data)),
                                    np.concatenate((train_target, test_target)),
-                                   dataset_tester.ClassifierType.decision_tree
+                                   dataset_tester.ClassifierType.DECISION_TREE
                                    )

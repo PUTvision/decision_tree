@@ -1,6 +1,6 @@
 import time
 import datetime
-from enum import Enum
+from enum import Enum, auto
 
 import numpy as np
 from sklearn import metrics
@@ -8,52 +8,69 @@ from sklearn.ensemble import RandomForestClassifier
 from sklearn.ensemble import RandomForestRegressor
 from sklearn.model_selection import GridSearchCV
 from sklearn.tree import DecisionTreeClassifier
+from sklearn.model_selection import ParameterGrid
 
+from sklearn.metrics import *
+
+# TODO(MF): original parfit did not work correctly with our data
+# from parfit.parfit import bestFit, plotScores
+from decision_trees.own_parfit.parfit import bestFit, plotScores
 from decision_trees.tree import RandomForest
 from decision_trees.tree import Tree
-
 from decision_trees.utils.convert_to_fixed_point import convert_to_fixed_point
 
 
 class ClassifierType(Enum):
-    decision_tree = 1
-    random_forest = 2
-    random_forest_regressor = 3
+    DECISION_TREE = auto()
+    RANDOM_FOREST = auto()
+    RANDOM_FOREST_REGRESSOR = auto()
 
 
-def perform_experiment(train_data: np.ndarray, train_target: np.ndarray,
+class GridSearchType(Enum):
+    SCIKIT = auto()
+    PARFIT = auto()
+    NONE = auto()
+
+
+def _save_score_and_model_to_file(score, model, fileaname: str):
+    print(f"f: {score:{1}.{5}}: {model}")
+    with open(fileaname, "a") as f:
+        print(f"f: {score:{1}.{5}}: {model}", file=f)
+
+
+def perform_gridsearch(train_data: np.ndarray, train_target: np.ndarray,
                        test_data: np.ndarray, test_target: np.ndarray,
-                       number_of_bits_per_feature_max: int
+                       number_of_bits_per_feature_max: int,
+                       clf_type: ClassifierType=ClassifierType.RANDOM_FOREST,
+                       gridsearch_type: GridSearchType=GridSearchType.PARFIT
                        ):
-    clf_type = ClassifierType.random_forest
     filename = datetime.datetime.now().strftime("%Y_%m_%d_%H_%M_%S") + "_gridsearch_results.txt"
 
     # first train on the non-qunatized data
-    # clf = grid_search(train_data, train_target, test_data, test_target, clf_type)
-    # print(f"f: {clf.best_score_:{1}.{5}} - {clf.best_params_}")
-    # print(f"f: {clf.best_score_:{1}.{5}} - {clf.best_params_}", file=result_file)
+    if gridsearch_type == GridSearchType.SCIKIT:
+        best_model, best_score = grid_search(train_data, train_target, test_data, test_target, clf_type)
+    elif gridsearch_type == GridSearchType.PARFIT:
+        best_model, best_score = parfit_gridsearch(train_data, train_target, test_data, test_target, clf_type, False)
+    else:
+        raise ValueError('Requested GridSearchType is not available')
 
-    best_model, best_score = parfit_gridsearch(train_data, train_target, test_data, test_target, clf_type, False)
-    print(f"f: {best_score:{1}.{5}}: {best_model}")
-    with open(filename, "a") as f:
-        print(f"f: {best_score:{1}.{5}}: {best_model}", file=f)
+    _save_score_and_model_to_file(best_score, best_model, filename)
 
-    # repeat on quantized data
+    # repeat on quantized data with different number of bits
     for i in range(number_of_bits_per_feature_max, 0, -1):
         train_data_quantized, test_data_quantized = quantize_data(train_data, test_data, i)
 
-        # clf = grid_search(train_data_quantized, train_target, test_data, test_target, clf_type)
-        # print(f"{i}: {clf.best_score_:{1}.{5}}: {clf.best_params_}")
-        # print(f"{i}: {clf.best_score_:{1}.{5}}: {clf.best_params_}", file=result_file)
-
-        best_model, best_score = parfit_gridsearch(
-            train_data_quantized, train_target,
-            test_data_quantized, test_target,
-            clf_type, False
-        )
-        print(f"{i}: {best_score:{1}.{5}} - {best_model}")
-        with open(filename, "a") as f:
-            print(f"{i}: {best_score:{1}.{5}} - {best_model}", file=f)
+        if gridsearch_type == GridSearchType.SCIKIT:
+            best_model, best_score = grid_search(train_data_quantized, train_target, test_data, test_target, clf_type)
+        elif gridsearch_type == GridSearchType.PARFIT:
+            best_model, best_score = parfit_gridsearch(
+                train_data_quantized, train_target,
+                test_data_quantized, test_target,
+                clf_type, False
+            )
+        else:
+            raise ValueError('Requested GridSearchType is not available')
+        _save_score_and_model_to_file(best_score, best_model, filename)
 
 
 def test_dataset(number_of_bits_per_feature: int,
@@ -62,34 +79,32 @@ def test_dataset(number_of_bits_per_feature: int,
                  clf_type: ClassifierType,
                  ):
     # first create classifier from scikit
-    if clf_type == ClassifierType.decision_tree:
+    if clf_type == ClassifierType.DECISION_TREE:
         clf = DecisionTreeClassifier(criterion="gini", max_depth=None, splitter="random", random_state=42)
-    elif clf_type == ClassifierType.random_forest:
+    elif clf_type == ClassifierType.RANDOM_FOREST:
         clf = RandomForestClassifier(n_estimators=100, max_depth=None, n_jobs=3, random_state=42)
-    elif clf_type == ClassifierType.random_forest_regressor:
+    elif clf_type == ClassifierType.RANDOM_FOREST_REGRESSOR:
         clf = RandomForestRegressor(n_estimators=10, max_depth=None, n_jobs=3, random_state=42)
     else:
         raise ValueError("Unknown classifier type specified")
 
     # first - train the classifiers on non-quantized data
-    print("Non-quantized approach:")
-
     clf.fit(train_data, train_target)
     test_predicted = clf.predict(test_data)
     print("scikit clf with test data:")
     report_classifier(clf, test_target, test_predicted)
 
     # perform quantization of train and test data
-    # while at some point I was considering not quantizing the test data, I came to a conclusion that it is not the way it will be performed in hardware
+    # while at some point I was considering not quantizing the test data,
+    # I came to a conclusion that it is not the way it will be performed in hardware
     train_data_quantized, test_data_quantized = quantize_data(train_data, test_data, number_of_bits_per_feature)
 
-    #print("Gridsearch")
-    #grid_search(train_data_quantized, train_target, ClassifierType.decision_tree)
+    # TODO(MF): here we should probably search for the best parameters of the classifier
+    # print("Gridsearch")
+    # grid_search(train_data_quantized, train_target, ClassifierType.decision_tree)
+    # print("Parfit test")
+    # parfit_gridsearch(train_data_quantized, train_target, test_data_quantized, test_target, clf_type, True)
 
-    print("Parfit test")
-    parfit_gridsearch(train_data_quantized, train_target, test_data_quantized, test_target, clf_type, True)
-
-    print("Quantization of data:")
     clf.fit(train_data_quantized, train_target)
     test_predicted_quantized = clf.predict(test_data_quantized)
     print("scikit clf with train and test data quantized:")
@@ -235,14 +250,14 @@ def grid_search(
     # for random_forest increasing the min_samples_split decreases performance, checking values above 20 is not useful
     # in general best results are obtained using min_samples_split=2 (default)
 
-    if clf_type == ClassifierType.decision_tree:
+    if clf_type == ClassifierType.DECISION_TREE:
         tuned_parameters = [{'max_depth': [10, 20, 50, 100],#[5, 10, 15, 20, 30, 40, 50, 60, 70, 80, 90, 100, None],
                              'splitter': ["best"], #, "random"],
                              'min_samples_split': [2, 10],#, 3, 4, 5, 6, 7, 8, 9, 10, 15, 20]
                              #'min_samples_split': [0.001, 0.002, 0.003, 0.004, 0.005, 0.01, 0.02, 0.05]
                              'random_state': [42]
                              }]
-    elif clf_type == ClassifierType.random_forest:
+    elif clf_type == ClassifierType.RANDOM_FOREST:
         tuned_parameters = [{'max_depth': [10, 50, 100, None],
                              'n_estimators': [10, 20, 50, 100, 200],
                              'min_samples_split': [2],
@@ -259,9 +274,9 @@ def grid_search(
     # print("# Tuning hyper-parameters for %s" % score)
     # print()
 
-    if clf_type == ClassifierType.decision_tree:
+    if clf_type == ClassifierType.DECISION_TREE:
         clf = GridSearchCV(DecisionTreeClassifier(), tuned_parameters, cv=5, scoring=f'{score}', n_jobs=3)
-    elif clf_type == ClassifierType.random_forest:
+    elif clf_type == ClassifierType.RANDOM_FOREST:
         clf = GridSearchCV(RandomForestClassifier(), tuned_parameters, cv=5, scoring=f'{score}', n_jobs=3)
     else:
         raise ValueError("Unknown classifier type specified")
@@ -288,7 +303,7 @@ def grid_search(
     #           % (mean, std * 2, params))
     # print()
 
-    return clf
+    return clf.best_params_, clf.best_score_
 
 
 #from parfit.parfit import bestFit, plotScores
@@ -305,14 +320,14 @@ def parfit_gridsearch(
         clf_type: ClassifierType,
         show_plot: bool
 ):
-    if clf_type == ClassifierType.decision_tree:
+    if clf_type == ClassifierType.DECISION_TREE:
         grid = {
             'max_depth': [10, 20, 50, 100],
             'splitter': ["best"],
             'min_samples_split': [2, 10],
             'random_state': [42]
         }
-    elif clf_type == ClassifierType.random_forest:
+    elif clf_type == ClassifierType.RANDOM_FOREST:
         grid = {
             'n_estimators': [10, 20, 50, 100],
             # criterion
@@ -327,15 +342,14 @@ def parfit_gridsearch(
     else:
         raise ValueError("Unknown classifier type specified")
 
-    paramGrid = ParameterGrid(grid)
-
-    best_model, best_score, all_models, all_scores = bestFit(RandomForestClassifier, paramGrid,
+    best_model, best_score, all_models, all_scores = bestFit(RandomForestClassifier, ParameterGrid(grid),
                                                              train_data, train_target, test_data, test_target,
                                                              predictType='predict',
                                                              metric=f1_score, bestScore='max',
                                                              scoreLabel='f1_weighted', showPlot=show_plot)
 
     return best_model, best_score
+
 
 # there is no general method for normalisation, so it was moved to be a part of each dataset
 def normalise_data(train_data: np.ndarray, test_data: np.ndarray):

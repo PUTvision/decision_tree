@@ -61,12 +61,12 @@ if __name__ == "__main__":
 
     from decision_trees import dataset_tester
 
-    dataset_tester.perform_experiment(train_data[:600], train_target[:600],
-                                      test_data[:100], test_target[:100],
-                                      8-1
-                                      )
+    # dataset_tester.perform_gridsearch(train_data[:600], train_target[:600],
+    #                                   test_data[:100], test_target[:100],
+    #                                   8 - 1
+    #                                   )
 
-    # dataset_tester.test_dataset(4,
-    #                             train_data[:6000], train_target[:6000], test_data[:1000], test_target[:1000],
-    #                             dataset_tester.ClassifierType.decision_tree,
-    #                             )
+    dataset_tester.test_dataset(4,
+                                train_data[:60000], train_target[:60000], test_data[:10000], test_target[:10000],
+                                dataset_tester.ClassifierType.DECISION_TREE,
+                                )
