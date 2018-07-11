@@ -306,10 +306,22 @@ def grid_search(
     return clf.best_params_, clf.best_score_
 
 
-#from parfit.parfit import bestFit, plotScores
-from decision_trees.own_parfit.parfit import bestFit, plotScores
-from sklearn.model_selection import ParameterGrid
-from sklearn.metrics import *
+def none_gridsearch(
+        train_data: np.ndarray, train_target: np.ndarray,
+        test_data: np.ndarray, test_target: np.ndarray,
+        clf_type: ClassifierType
+):
+    # first create classifier from scikit
+    if clf_type == ClassifierType.DECISION_TREE:
+        clf = DecisionTreeClassifier(criterion="gini", max_depth=None, splitter="random", random_state=42)
+    elif clf_type == ClassifierType.RANDOM_FOREST:
+        clf = RandomForestClassifier(n_estimators=100, max_depth=None, n_jobs=3, random_state=42)
+    elif clf_type == ClassifierType.RANDOM_FOREST_REGRESSOR:
+        clf = RandomForestRegressor(n_estimators=10, max_depth=None, n_jobs=3, random_state=42)
+    else:
+        raise ValueError("Unknown classifier type specified")
+
+    clf = clf.fit(train_data, train_target)
 
 
 # TODO(MF): check parfit module for parameters search
