@@ -5,6 +5,7 @@ from enum import Enum
 import numpy as np
 from sklearn import metrics
 from sklearn.ensemble import RandomForestClassifier
+from sklearn.ensemble import RandomForestRegressor
 from sklearn.model_selection import GridSearchCV
 from sklearn.tree import DecisionTreeClassifier
 
@@ -17,6 +18,7 @@ from decision_trees.utils.convert_to_fixed_point import convert_to_fixed_point
 class ClassifierType(Enum):
     decision_tree = 1
     random_forest = 2
+    random_forest_regressor = 3
 
 
 def perform_experiment(train_data: np.ndarray, train_target: np.ndarray,
@@ -64,6 +66,8 @@ def test_dataset(number_of_bits_per_feature: int,
         clf = DecisionTreeClassifier(criterion="gini", max_depth=None, splitter="random", random_state=42)
     elif clf_type == ClassifierType.random_forest:
         clf = RandomForestClassifier(n_estimators=100, max_depth=None, n_jobs=3, random_state=42)
+    elif clf_type == ClassifierType.random_forest_regressor:
+        clf = RandomForestRegressor(n_estimators=10, max_depth=None, n_jobs=3, random_state=42)
     else:
         raise ValueError("Unknown classifier type specified")
 
@@ -83,7 +87,7 @@ def test_dataset(number_of_bits_per_feature: int,
     #grid_search(train_data_quantized, train_target, ClassifierType.decision_tree)
 
     print("Parfit test")
-    parfit_gridsearch(train_data_quantized, train_target, test_data_quantized, test_target)
+    parfit_gridsearch(train_data_quantized, train_target, test_data_quantized, test_target, clf_type, True)
 
     print("Quantization of data:")
     clf.fit(train_data_quantized, train_target)
@@ -239,9 +243,9 @@ def grid_search(
                              'random_state': [42]
                              }]
     elif clf_type == ClassifierType.random_forest:
-        tuned_parameters = [{'max_depth': [10, 100],
-                             'n_estimators': [10, 20, 50, 100],
-                             'min_samples_split': [2, 10],
+        tuned_parameters = [{'max_depth': [10, 50, 100, None],
+                             'n_estimators': [10, 20, 50, 100, 200],
+                             'min_samples_split': [2],
                              #'min_samples_split': [2, 3, 4, 5, 6, 7, 8, 9, 10, 15, 20, 30, 40, 50, 75, 100]
                              #'n_jobs': [-1],
                              'random_state': [42]
