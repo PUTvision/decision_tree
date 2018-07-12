@@ -1,6 +1,7 @@
 import time
 import datetime
 from enum import Enum, auto
+from typing import Dict
 
 import numpy as np
 from sklearn import metrics
@@ -33,9 +34,55 @@ class GridSearchType(Enum):
 
 
 def _save_score_and_model_to_file(score, model, fileaname: str):
-    print(f"f: {score:{1}.{5}}: {model}")
+    print(f"f1: {score:{1}.{5}}: {model}")
     with open(fileaname, "a") as f:
-        print(f"f: {score:{1}.{5}}: {model}", file=f)
+        print(f"f1: {score:{1}.{5}}: {model}", file=f)
+
+
+def _get_classifier(clf_type: ClassifierType):
+    if clf_type == ClassifierType.DECISION_TREE:
+        clf = DecisionTreeClassifier(criterion="gini", max_depth=None, splitter="random", random_state=42)
+    elif clf_type == ClassifierType.RANDOM_FOREST:
+        clf = RandomForestClassifier(n_estimators=100, max_depth=None, n_jobs=3, random_state=42)
+    elif clf_type == ClassifierType.RANDOM_FOREST_REGRESSOR:
+        clf = RandomForestRegressor(n_estimators=10, max_depth=None, n_jobs=3, random_state=42)
+    else:
+        raise ValueError("Unknown classifier type specified")
+
+    return clf
+
+
+def _get_tuned_parameters(clf_type: ClassifierType) -> Dict:
+    # TODO - min_samples_split could be a float (0.0-1.0) to tell the percentage - test it!
+
+    # general observations:
+    # for random_forest increasing the min_samples_split decreases performance, checking values above 20 is not useful
+    # in general best results are obtained using min_samples_split=2 (default)
+
+    if clf_type == ClassifierType.DECISION_TREE:
+        tuned_parameters = {
+            'max_depth': [10, 20, 50, 100],  # [5, 10, 15, 20, 30, 40, 50, 60, 70, 80, 90, 100, None],
+            # 'splitter': ["best", "random"],
+            'min_samples_split': [2, 10],  # [2, 3, 4, 5, 6, 7, 8, 9, 10, 15, 20]
+            # 'min_samples_split': [0.001, 0.002, 0.003, 0.004, 0.005, 0.01, 0.02, 0.05]
+            'random_state': [42]
+        }
+    elif clf_type == ClassifierType.RANDOM_FOREST:
+        tuned_parameters = {
+            'max_depth': [10, 20, 50, 100, None],
+            # criterion
+            'n_estimators': [10, 20, 50, 100, 200],
+            # 'max_features': ['sqrt', 'log2'],
+            # 'min_samples_leaf': [1, 5, 10, 25, 50, 100, 125, 150, 175, 200],
+            'min_samples_split': [2],  # [2, 3, 4, 5, 6, 7, 8, 9, 10, 15, 20, 30, 40, 50, 75, 100]
+            'class_weight': [None],  # , 'balanced'],
+            # 'n_jobs': [-1],
+            'random_state': [42]
+        }
+    else:
+        raise ValueError("Unknown classifier type specified")
+
+    return tuned_parameters
 
 
 def perform_gridsearch(train_data: np.ndarray, train_target: np.ndarray,
@@ -51,6 +98,8 @@ def perform_gridsearch(train_data: np.ndarray, train_target: np.ndarray,
         best_model, best_score = grid_search(train_data, train_target, test_data, test_target, clf_type)
     elif gridsearch_type == GridSearchType.PARFIT:
         best_model, best_score = parfit_gridsearch(train_data, train_target, test_data, test_target, clf_type, False)
+    elif gridsearch_type == GridSearchType.NONE:
+        best_model, best_score = none_gridsearch(train_data, train_target, test_data, test_target, clf_type)
     else:
         raise ValueError('Requested GridSearchType is not available')
 
@@ -68,6 +117,8 @@ def perform_gridsearch(train_data: np.ndarray, train_target: np.ndarray,
                 test_data_quantized, test_target,
                 clf_type, False
             )
+        elif gridsearch_type == GridSearchType.NONE:
+            best_model, best_score = none_gridsearch(train_data_quantized, train_target, test_data, test_target, clf_type)
         else:
             raise ValueError('Requested GridSearchType is not available')
         _save_score_and_model_to_file(best_score, best_model, filename)
@@ -79,14 +130,7 @@ def test_dataset(number_of_bits_per_feature: int,
                  clf_type: ClassifierType,
                  ):
     # first create classifier from scikit
-    if clf_type == ClassifierType.DECISION_TREE:
-        clf = DecisionTreeClassifier(criterion="gini", max_depth=None, splitter="random", random_state=42)
-    elif clf_type == ClassifierType.RANDOM_FOREST:
-        clf = RandomForestClassifier(n_estimators=100, max_depth=None, n_jobs=3, random_state=42)
-    elif clf_type == ClassifierType.RANDOM_FOREST_REGRESSOR:
-        clf = RandomForestRegressor(n_estimators=10, max_depth=None, n_jobs=3, random_state=42)
-    else:
-        raise ValueError("Unknown classifier type specified")
+    clf = _get_classifier(clf_type)
 
     # first - train the classifiers on non-quantized data
     clf.fit(train_data, train_target)
@@ -244,35 +288,17 @@ def grid_search(
     scores = ['f1_weighted']
     # alternatives: http://scikit-learn.org/stable/modules/model_evaluation.html#common-cases-predefined-values
 
-    # TODO - min_samples_split could be a float (0.0-1.0) to tell the percentage - test it!
-
-    # general observations:
-    # for random_forest increasing the min_samples_split decreases performance, checking values above 20 is not useful
-    # in general best results are obtained using min_samples_split=2 (default)
-
-    if clf_type == ClassifierType.DECISION_TREE:
-        tuned_parameters = [{'max_depth': [10, 20, 50, 100],#[5, 10, 15, 20, 30, 40, 50, 60, 70, 80, 90, 100, None],
-                             'splitter': ["best"], #, "random"],
-                             'min_samples_split': [2, 10],#, 3, 4, 5, 6, 7, 8, 9, 10, 15, 20]
-                             #'min_samples_split': [0.001, 0.002, 0.003, 0.004, 0.005, 0.01, 0.02, 0.05]
-                             'random_state': [42]
-                             }]
-    elif clf_type == ClassifierType.RANDOM_FOREST:
-        tuned_parameters = [{'max_depth': [10, 50, 100, None],
-                             'n_estimators': [10, 20, 50, 100, 200],
-                             'min_samples_split': [2],
-                             #'min_samples_split': [2, 3, 4, 5, 6, 7, 8, 9, 10, 15, 20, 30, 40, 50, 75, 100]
-                             #'n_jobs': [-1],
-                             'random_state': [42]
-                             }]
-    else:
-        raise ValueError("Unknown classifier type specified")
+    tuned_parameters = _get_tuned_parameters(clf_type)
 
     #for score in scores:
     score = scores[0]
 
     # print("# Tuning hyper-parameters for %s" % score)
     # print()
+
+    # TODO: important note - this does not use test data to evaluate, instead it probably splits the train data
+    # internally, which means that the final scor will be calculated on this data and is different than the one
+    # calculated on test data
 
     if clf_type == ClassifierType.DECISION_TREE:
         clf = GridSearchCV(DecisionTreeClassifier(), tuned_parameters, cv=5, scoring=f'{score}', n_jobs=3)
@@ -311,17 +337,11 @@ def none_gridsearch(
         test_data: np.ndarray, test_target: np.ndarray,
         clf_type: ClassifierType
 ):
-    # first create classifier from scikit
-    if clf_type == ClassifierType.DECISION_TREE:
-        clf = DecisionTreeClassifier(criterion="gini", max_depth=None, splitter="random", random_state=42)
-    elif clf_type == ClassifierType.RANDOM_FOREST:
-        clf = RandomForestClassifier(n_estimators=100, max_depth=None, n_jobs=3, random_state=42)
-    elif clf_type == ClassifierType.RANDOM_FOREST_REGRESSOR:
-        clf = RandomForestRegressor(n_estimators=10, max_depth=None, n_jobs=3, random_state=42)
-    else:
-        raise ValueError("Unknown classifier type specified")
+    clf = _get_classifier(clf_type)
 
     clf = clf.fit(train_data, train_target)
+
+    return clf.get_params(), clf.score(test_data, test_target)
 
 
 # TODO(MF): check parfit module for parameters search
@@ -332,27 +352,7 @@ def parfit_gridsearch(
         clf_type: ClassifierType,
         show_plot: bool
 ):
-    if clf_type == ClassifierType.DECISION_TREE:
-        grid = {
-            'max_depth': [10, 20, 50, 100],
-            'splitter': ["best"],
-            'min_samples_split': [2, 10],
-            'random_state': [42]
-        }
-    elif clf_type == ClassifierType.RANDOM_FOREST:
-        grid = {
-            'n_estimators': [10, 20, 50, 100],
-            # criterion
-            # 'max_features': ['sqrt', 'log2'],
-            # 'min_samples_leaf': [1, 5, 10, 25, 50, 100, 125, 150, 175, 200],
-            'max_depth': [10, 20, 50, 100, None],
-            # 'min_samples_split': [2, 5],#, 10],
-            'class_weight': [None],  # , 'balanced'],
-            'n_jobs': [-1],
-            'random_state': [42]
-        }
-    else:
-        raise ValueError("Unknown classifier type specified")
+    grid = _get_tuned_parameters(clf_type)
 
     best_model, best_score, all_models, all_scores = bestFit(RandomForestClassifier, ParameterGrid(grid),
                                                              train_data, train_target, test_data, test_target,
