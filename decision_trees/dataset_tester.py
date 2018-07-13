@@ -103,6 +103,7 @@ def perform_gridsearch(train_data: np.ndarray, train_target: np.ndarray,
     else:
         raise ValueError('Requested GridSearchType is not available')
 
+    print('No quantization - full resolution')
     _save_score_and_model_to_file(best_score, best_model, filename)
 
     # repeat on quantized data with different number of bits
@@ -121,6 +122,7 @@ def perform_gridsearch(train_data: np.ndarray, train_target: np.ndarray,
             best_model, best_score = none_gridsearch(train_data_quantized, train_target, test_data, test_target, clf_type)
         else:
             raise ValueError('Requested GridSearchType is not available')
+        print(f'number of bits: {i}')
         _save_score_and_model_to_file(best_score, best_model, filename)
 
 

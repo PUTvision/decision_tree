@@ -95,13 +95,15 @@ if __name__ == "__main__":
 
     from decision_trees import dataset_tester
 
-    dataset_tester.perform_gridsearch(train_data[:600], train_target[:600],
-                                      test_data[:100], test_target[:100],
-                                      8 - 1
+    dataset_tester.perform_gridsearch(train_data[:19000], train_target[:19000],
+                                      test_data[:10000], test_target[:10000],
+                                      10 - 1,
+                                      clf_type=dataset_tester.ClassifierType.RANDOM_FOREST,
+                                      gridsearch_type=dataset_tester.GridSearchType.NONE
                                       )
 
     # dataset_tester.test_dataset(8,
     #                             train_data[:19000], train_target[:19000],
     #                             test_data[:10000], test_target[:10000],
-    #                             dataset_tester.ClassifierType.random_forest,
+    #                             dataset_tester.ClassifierType.RANDOM_FOREST,
     #                             )
