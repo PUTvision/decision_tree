@@ -1,5 +1,4 @@
 import numpy as np
-from sklearn.utils import shuffle
 from typing import Tuple
 
 from decision_trees.datasets.dataset_base import DatasetBase
@@ -13,13 +12,13 @@ class FashionMnistRaw(DatasetBase):
     def __init__(self):
         ...
 
-    def _load_data(self) -> Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
+    def load_data(self) -> Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
         X_train, y_train = load_mnist('./../../submodules/fashion-mnist/data/fashion', kind='train')
         X_test, y_test = load_mnist('./../../submodules/fashion-mnist/data/fashion/', kind='t10k')
 
-        train_data = X_train
+        train_data = self._normalise(X_train)
         train_target = y_train
-        test_data = X_test
+        test_data = self._normalise(X_test)
         test_target = y_test
 
         return train_data, train_target, test_data, test_target
@@ -48,16 +47,13 @@ def test_mnist_raw():
     assert True
 
 
-if __name__ == "__main__":
+def main():
     d = FashionMnistRaw()
 
-    train_data, train_target, test_data, test_target = d._load_data()
+    train_data, train_target, test_data, test_target = d.load_data()
 
     print(f"train_data.shape: {train_data.shape}")
     print(f"np.unique(test_target): {np.unique(test_target)}")
-
-    train_data = d._normalise(train_data)
-    test_data = d._normalise(test_data)
 
     from decision_trees import dataset_tester
 
@@ -72,3 +68,7 @@ if __name__ == "__main__":
     #                             train_data[:60000], train_target[:60000], test_data[:10000], test_target[:10000],
     #                             dataset_tester.ClassifierType.DECISION_TREE,
     #                             )
+
+
+if __name__ == "__main__":
+    main()

@@ -1,5 +1,5 @@
+from typing import Tuple
 import pickle
-
 import numpy as np
 
 from decision_trees.datasets.dataset_base import DatasetBase
@@ -13,7 +13,7 @@ class InriaHoG(DatasetBase):
         self._nr_neg_train = nr_neg_train
         self._nr_neg_test = nr_neg_test
 
-    def _load_data(self):
+    def load_data(self)-> Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
         # prepare the training data
         with open("..\\data\\positive_train_" + self._data_filename + ".pickle", "rb") as f:
             train_data_positive = pickle.load(f)
@@ -68,6 +68,7 @@ def test_inria_hog():
     d.run()
 
     assert True
+
 
 if __name__ == "__main__":
     test_inria_hog()

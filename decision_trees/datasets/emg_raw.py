@@ -1,7 +1,6 @@
+from typing import Tuple, List
 import csv
 import os
-from typing import Tuple, List
-
 import numpy as np
 
 from decision_trees.datasets.dataset_base import DatasetBase
@@ -50,7 +49,7 @@ class EMGRaw(DatasetBase):
 
         return data_array
 
-    def _load_data(self) -> Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
+    def load_data(self) -> Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
         input_train_files = []
         output_train_files = []
         input_test_files = []
@@ -71,6 +70,9 @@ class EMGRaw(DatasetBase):
         input_test_data = self._load_files(input_test_files, is_output=False)
         output_test_data = self._load_files(output_test_files, is_output=True)
 
+        input_train_data = self._normalise(input_train_data)
+        input_test_data = self._normalise(input_test_data)
+
         return input_train_data, output_train_data, input_test_data, output_test_data
 
     def _normalise(self, data: np.ndarray):
@@ -83,15 +85,12 @@ class EMGRaw(DatasetBase):
 if __name__ == "__main__":
     d = EMGRaw("./../../data/EMG/")
 
-    train_data, train_target, test_data, test_target = d._load_data()
+    train_data, train_target, test_data, test_target = d.load_data()
 
     print(f"train_data.shape: {train_data.shape}")
     print(f"test_data.shape: {test_data.shape}")
     print(f"np.unique(train_target): {np.unique(train_target)}")
     print(f"np.unique(test_target): {np.unique(test_target)}")
-
-    train_data = d._normalise(train_data)
-    test_data = d._normalise(test_data)
 
     from decision_trees import dataset_tester
 

@@ -1,3 +1,4 @@
+from typing import Tuple
 import numpy as np
 from sklearn import datasets
 from sklearn.utils import shuffle
@@ -10,7 +11,7 @@ class MnistRaw(DatasetBase):
         self._number_of_train_samples = number_of_train_samples
         self._number_of_test_samples = number_of_test_samples
 
-    def _load_data(self):
+    def load_data(self) -> Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
         mnist = datasets.fetch_mldata('MNIST original', data_home=".//data//MNIST//")
         # print(mnist.data.shape)
         # print(mnist.target.shape)
@@ -19,10 +20,14 @@ class MnistRaw(DatasetBase):
         # it is necessary to shuffle the data as all 0's are at the front and all 9's are at the end
         mnist.data, mnist.target = shuffle(mnist.data, mnist.target)
 
-        train_data = mnist.data[:self._number_of_train_samples]
+        train_data = self._normalise(mnist.data[:self._number_of_train_samples])
         train_target = mnist.target[:self._number_of_train_samples]
-        test_data = mnist.data[self._number_of_train_samples:self._number_of_train_samples+self._number_of_test_samples]
-        test_target = mnist.target[self._number_of_train_samples:self._number_of_train_samples+self._number_of_test_samples]
+        test_data = self._normalise(
+            mnist.data[self._number_of_train_samples:self._number_of_train_samples+self._number_of_test_samples]
+        )
+        test_target = mnist.target[
+                      self._number_of_train_samples:self._number_of_train_samples+self._number_of_test_samples
+                      ]
 
         return train_data, train_target, test_data, test_target
 

@@ -1,3 +1,4 @@
+from typing import Tuple
 import matplotlib.pyplot as plt
 import numpy as np
 from sklearn import datasets
@@ -56,7 +57,7 @@ class DigitsRaw(DatasetBase):
         self._number_of_train_samples = number_of_train_samples
         self._number_of_test_samples = number_of_test_samples
 
-    def _load_data(self):
+    def load_data(self) -> Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
         digits = datasets.load_digits()
         # print(digits.data.shape)
         # print(digits.target.shape)
@@ -65,6 +66,8 @@ class DigitsRaw(DatasetBase):
         # data has to be flatten (8x8 image -> 64x1 matrix)
         data = digits.data.reshape((len(digits.data), -1))
         # print(len(data))
+
+        data = self._normalise(data)
 
         train_data = data[:self._number_of_train_samples]
         train_target = digits.target[:self._number_of_train_samples]
@@ -108,5 +111,5 @@ def test_digits_raw():
 
 
 if __name__ == "__main__":
-    #sample_from_scikit()
+    # sample_from_scikit()
     test_digits_raw()
