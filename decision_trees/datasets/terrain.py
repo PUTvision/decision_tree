@@ -1,6 +1,5 @@
 from typing import Tuple
-from sklearn import datasets
-from sklearn.utils import shuffle
+from sklearn.model_selection import train_test_split
 import scipy.io
 import scipy.stats
 import scipy.fftpack
@@ -13,28 +12,23 @@ class Terrain(DatasetBase):
     def __init__(self, path: str):
         self.path = path
 
-    def _load_data(self) -> Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
+    def load_data(self) -> Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
         mat = scipy.io.loadmat(f'{self.path}pociete_kroki_rasp.mat')
 
         # for key, value in mat.items():
         #     print(key)
 
-        steps_raw = {}
-        steps_raw
+        steps_raw = {
+            'krok_black': mat['krok_black'],
+            'krok_deski': mat['krok_deski'],
+            'krok_kam': mat['krok_kam'],
+            'krok_pcv': mat['krok_pcv'],
+            'krok_plytki': mat['krok_plytki'],
+            'krok_wyk': mat['krok_wyk']
+        }
 
-        krok_black = mat['krok_black']
-        krok_deski = mat['krok_deski']
-        krok_kam = mat['krok_kam']
-        krok_pcv = mat['krok_pcv']
-        krok_plytki = mat['krok_plytki']
-        krok_wyk = mat['krok_wyk']
-
-        print(np.shape(krok_black))
-        print(np.shape(krok_deski))
-        print(np.shape(krok_kam))
-        print(np.shape(krok_pcv))
-        print(np.shape(krok_plytki))
-        print(np.shape(krok_wyk))
+        # for key, value in steps_raw.items():
+        #     print(f'{key} shape: {np.shape(value)}')
 
         def do_fft(signal):
             yf = scipy.fftpack.fft(signal, axis=0)
@@ -52,7 +46,7 @@ class Terrain(DatasetBase):
                 temp = np.array([variance, skew, kurtosis, fifth_moment])
                 fouriers = do_fft(data_for_processing)
                 temp = np.vstack((temp, fouriers[1:25, :]))
-                if vector == []:
+                if not vector:
                     vector = temp
                 else:
                     vector = np.dstack((vector, temp))
@@ -63,30 +57,71 @@ class Terrain(DatasetBase):
         # 2nd dim - measurement [F_x, F_y, F_z, T_x, T_y, T_z]
         # 3rd dim - [variance, skew, kurtosis, fifth_moment, 24 first fft elements sans zero frequency]
 
-        sample = compute_stats(krok_deski)
+        input_data = []
+        output_data = []
 
-        print(np.shape(sample))
-        print(sample[0, :, :])
-        print(sample[0, 0, :])
+        for idx, (key, value) in enumerate(steps_raw.items()):
+            # print(idx)
+            steps_stats = compute_stats(value)
 
-        steps_concatenetad = []
-        for step in sample:
-            print(np.shape(step))
-            concatenated = np.concatenate(step)
-            steps_concatenetad.append(concatenated)
+            # print(np.shape(step_stats))
+            # print(step_stats[0, :, :])
+            # print(step_stats[0, 0, :])
 
-        print(np.shape(steps_concatenetad))
+            steps_stats_concatenated = []
+            for s in steps_stats:
+                # print(np.shape(s))
+                s_concatenated = np.concatenate(s)
+                # print(np.shape(s_concatenated))
+                steps_stats_concatenated.append(s_concatenated)
+
+            # print(np.shape(steps_stats_concatenated))
+            input_data.extend(steps_stats_concatenated)
+            output_data.extend(np.full(np.shape(steps_stats_concatenated)[0], idx))
+
+        print(np.shape(input_data))
+        print(np.shape(output_data))
+
+        input_data = self._normalise(np.asarray(input_data))
+
+        train_data, test_data, train_target, test_target = train_test_split(
+            input_data, output_data, test_size=0.2, random_state=42, shuffle=True
+        )
+
+        return np.asarray(train_data), np.asarray(train_target), np.asarray(test_data), np.asarray(test_target)
 
     @staticmethod
     def _normalise(data: np.ndarray):
-        # TODO: normalise each parameter (variance / skew / ...) for Fx, Fy etc separately
-        # in case of MNIST data it is possible to just divide each data by maximum value
-        # each feature is in range 0-255
-        data = data / 255
+        # normalise each parameter (variance / skew / ...) for Fx, Fy etc separately
 
-        return data
+        # col_idx = 167
+        #
+        # print(f'max: {np.max(data[:, col_idx])}')
+        # print(f'min: {np.min(data[:, col_idx])}')
+        # print(np.shape(data[:, col_idx]))
+
+        data_normed = (data - np.min(data, 0)) / np.ptp(data, 0)
+
+        # print(f'max: {np.max(data_normed[:, col_idx])}')
+        # print(f'min: {np.min(data_normed[:, col_idx])}')
+        # print(np.shape(data_normed[:, col_idx]))
+
+        return data_normed
 
 
-if __name__ == "__main__":
-    d = Terrain("./data/")
-    d._load_data()
+def main():
+    d = Terrain('./data/')
+    train_data, train_target, test_data, test_target = d.load_data()
+    print(f'np.shape(train_data): {np.shape(train_data)}')
+    print(f'np.unique(test_target): {np.unique(test_target)}')
+
+    from decision_trees import dataset_tester
+
+    dataset_tester.test_dataset(32,
+                                train_data, train_target, test_data, test_target,
+                                dataset_tester.ClassifierType.RANDOM_FOREST,
+                                )
+
+
+if __name__ == '__main__':
+    main()

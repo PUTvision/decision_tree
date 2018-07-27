@@ -8,7 +8,7 @@ from decision_trees import dataset_tester
 
 class DatasetBase(metaclass=abc.ABCMeta):
     @abc.abstractmethod
-    def _load_data(self) -> Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
+    def load_data(self) -> Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
         pass
 
     @staticmethod
@@ -17,10 +17,7 @@ class DatasetBase(metaclass=abc.ABCMeta):
         pass
 
     def run(self):
-        train_data, train_target, test_data, test_target = self._load_data()
-
-        train_data = self._normalise(train_data)
-        test_data = self._normalise(test_data)
+        train_data, train_target, test_data, test_target = self.load_data()
 
         dataset_tester.test_dataset(8,
                                     train_data, train_target, test_data, test_target,
@@ -28,12 +25,9 @@ class DatasetBase(metaclass=abc.ABCMeta):
                                     )
 
     def run_grid_search(self):
-        train_data, train_target, test_data, test_target = self._load_data()
+        train_data, train_target, test_data, test_target = self.load_data()
 
-        train_data = self._normalise(train_data)
-        test_data = self._normalise(test_data)
-
-        dataset_tester.grid_search(np.concatenate((train_data, test_data)),
-                                   np.concatenate((train_target, test_target)),
+        dataset_tester.grid_search(train_data, train_target,
+                                   test_data, test_target,
                                    dataset_tester.ClassifierType.DECISION_TREE
                                    )

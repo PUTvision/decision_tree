@@ -19,6 +19,7 @@ setup(
         'scikit-learn <0.20',
         'scikit-image <0.14',
         'numpy <2.0',
+        'scipy <2.0',
         'matplotlib <3.0',
         'click <7.0',
     ],
