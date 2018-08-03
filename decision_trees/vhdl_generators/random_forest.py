@@ -4,7 +4,7 @@ from decision_trees.vhdl_generators.tree import Tree
 import numpy as np
 import sklearn.ensemble
 
-from decision_trees.constants import ClassifierType
+from decision_trees.utils.constants import ClassifierType
 
 
 class RandomForest(VHDLCreator):

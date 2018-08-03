@@ -4,7 +4,7 @@ import numpy as np
 import sklearn.tree
 
 from decision_trees.utils.convert_to_fixed_point import convert_to_fixed_point
-from decision_trees.constants import ClassifierType
+from decision_trees.utils.constants import ClassifierType
 
 
 class Split:
