@@ -44,8 +44,8 @@ def test_boston_raw():
     # SET THE FOLLOWING PARAMETERS
     # Boston House Prices DATABASE
     # total number of samples: 506 (each is 13 values)
-    number_of_train_samples = 400
-    number_of_test_samples = 100
+    number_of_train_samples = 456
+    number_of_test_samples = 50
     # END OF PARAMETERS SETTING
     if (number_of_train_samples + number_of_test_samples) > 506:
         print("ERROR, too much samples set!")
@@ -63,13 +63,6 @@ if __name__ == "__main__":
     train_data, train_target, test_data, test_target = d.load_data()
 
     print(f"train_data.shape: {train_data.shape}")
-
-    from decision_trees import dataset_tester
-
-    # dataset_tester.perform_experiment(train_data[:60000], train_target[:60000],
-    #                                   test_data[:10000], test_target[:10000],
-    #                                   8-1
-    #                                   )
 
     from sklearn.ensemble import RandomForestRegressor
 

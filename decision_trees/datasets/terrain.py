@@ -46,7 +46,7 @@ class Terrain(DatasetBase):
                 temp = np.array([variance, skew, kurtosis, fifth_moment])
                 fouriers = do_fft(data_for_processing)
                 temp = np.vstack((temp, fouriers[1:25, :]))
-                if not vector:
+                if vector == []:
                     vector = temp
                 else:
                     vector = np.dstack((vector, temp))
