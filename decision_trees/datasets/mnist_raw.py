@@ -12,7 +12,7 @@ class MnistRaw(DatasetBase):
         self._number_of_test_samples = number_of_test_samples
 
     def load_data(self) -> Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
-        mnist = datasets.fetch_mldata('MNIST original', data_home=".//data//MNIST//")
+        mnist = datasets.fetch_mldata('MNIST original', data_home="./../../data/datasets/MNIST/")
         # print(mnist.data.shape)
         # print(mnist.target.shape)
         # print(np.unique(mnist.target))

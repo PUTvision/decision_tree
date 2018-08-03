@@ -1,6 +1,6 @@
 import time
 import datetime
-from typing import Dict
+from typing import Dict, Optional
 
 import numpy as np
 from sklearn import metrics
@@ -99,7 +99,7 @@ def perform_gridsearch(train_data: np.ndarray, train_target: np.ndarray,
 
     # repeat on quantized data with different number of bits
     for i in range(number_of_bits_per_feature_max, 0, -1):
-        train_data_quantized, test_data_quantized = quantize_data(train_data, test_data, i)
+        train_data_quantized, test_data_quantized = quantize_data(train_data, test_data, i, False, "./../../data/")
 
         if gridsearch_type == GridSearchType.SCIKIT:
             best_model, best_score = grid_search(train_data_quantized, train_target, test_data, test_target, clf_type)
@@ -155,7 +155,7 @@ def test_dataset(number_of_bits_per_feature: int,
     compare_with_own_classifier(
         [test_predicted, test_predicted_quantized, my_clf_test_predicted_quantized],
         ["scikit", "scikit_quantized", "own_clf_quantized"],
-        test_target, flag_save_details_to_file=True
+        test_target, flag_save_details_to_file=True, path="./../../data/"
     )
 
     # optionally check the performance of the scikit classifier for reference (does not work for own classifier)
@@ -183,15 +183,17 @@ def report_classifier(clf, expected, predicted):
     print(f"accuracy: {accuracy:{2}.{4}}")
 
 
-def quantize_data(train_data: np.ndarray, test_data: np.ndarray, number_of_bits: int):
+def quantize_data(train_data: np.ndarray, test_data: np.ndarray, number_of_bits: int,
+                  flag_save_details_to_file: bool = False, path: str = "./"):
     train_data_quantized = np.array([convert_to_fixed_point(x, number_of_bits) for x in train_data])
     test_data_quantized = np.array([convert_to_fixed_point(x, number_of_bits) for x in test_data])
 
-    # with open("quantization_comparision.txt", "w") as file_quantization:
-    #     print("Size before quantization: " + str(len(train_data)), file=file_quantization)
-    #     print("First element before quantization:\n" + str(train_data[0]), file=file_quantization)
-    #     print("Size after quantization: " + str(len(train_data_quantized)), file=file_quantization)
-    #     print("First element after quantization:\n" + str(train_data_quantized[0]), file=file_quantization)
+    if flag_save_details_to_file:
+        with open(path + "/quantization_comparision.txt", "w") as file_quantization:
+            print("Size before quantization: " + str(len(train_data)), file=file_quantization)
+            print("First element before quantization:\n" + str(train_data[0]), file=file_quantization)
+            print("Size after quantization: " + str(len(train_data_quantized)), file=file_quantization)
+            print("First element after quantization:\n" + str(train_data_quantized[0]), file=file_quantization)
 
     return train_data_quantized, test_data_quantized
 
@@ -216,14 +218,15 @@ def generate_my_classifier(clf, number_of_features, number_of_bits_per_feature: 
 
 def compare_with_own_classifier(results: [], results_names: [str],
                                 test_target,
-                                flag_save_details_to_file: bool = True
+                                flag_save_details_to_file: bool = True,
+                                path: str = "./"
                                 ):
     flag_no_errors = True
     number_of_errors = np.zeros(len(results))
 
     comparision_file = None
     if flag_save_details_to_file:
-        comparision_file = open("comparision_details.txt", "w")
+        comparision_file = open(path + "/comparision_details.txt", "w")
 
     for j in range(0, len(test_target)):
         flag_iteration_error = False

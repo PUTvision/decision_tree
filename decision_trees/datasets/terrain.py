@@ -110,7 +110,7 @@ class Terrain(DatasetBase):
 
 
 def main():
-    d = Terrain('./data/')
+    d = Terrain('./../../data/datasets/terrain_data/')
     train_data, train_target, test_data, test_target = d.load_data()
     print(f'np.shape(train_data): {np.shape(train_data)}')
     print(f'np.unique(test_target): {np.unique(test_target)}')

@@ -83,7 +83,7 @@ class EMGRaw(DatasetBase):
 
 
 if __name__ == "__main__":
-    d = EMGRaw("./../../data/EMG/")
+    d = EMGRaw("./../../data/datasets/EMG/")
 
     train_data, train_target, test_data, test_target = d.load_data()
 
