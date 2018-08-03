@@ -61,7 +61,8 @@ def main():
                                       test_data[:10000], test_target[:10000],
                                       10 - 1,
                                       dataset_tester.ClassifierType.DECISION_TREE,
-                                      dataset_tester.GridSearchType.NONE
+                                      dataset_tester.GridSearchType.NONE,
+                                      "./../../data/gridsearch_results/"
                                       )
 
     # dataset_tester.test_dataset(4,

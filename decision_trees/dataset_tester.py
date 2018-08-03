@@ -1,6 +1,5 @@
 import time
 import datetime
-from enum import Enum, auto
 from typing import Dict
 
 import numpy as np
@@ -15,22 +14,13 @@ from sklearn.metrics import *
 
 # TODO(MF): original parfit did not work correctly with our data
 # from parfit.parfit import bestFit, plotScores
-from decision_trees.own_parfit.parfit import bestFit, plotScores
-from decision_trees.tree import RandomForest
-from decision_trees.tree import Tree
+from decision_trees.own_parfit.parfit import bestFit
+from decision_trees.utils.constants import ClassifierType
+from decision_trees.utils.constants import GridSearchType
+from decision_trees.vhdl_generators.tree import Tree
+from decision_trees.vhdl_generators.random_forest import RandomForest
+
 from decision_trees.utils.convert_to_fixed_point import convert_to_fixed_point
-
-
-class ClassifierType(Enum):
-    DECISION_TREE = auto()
-    RANDOM_FOREST = auto()
-    RANDOM_FOREST_REGRESSOR = auto()
-
-
-class GridSearchType(Enum):
-    SCIKIT = auto()
-    PARFIT = auto()
-    NONE = auto()
 
 
 def _save_score_and_model_to_file(score, model, fileaname: str):
@@ -45,7 +35,7 @@ def _get_classifier(clf_type: ClassifierType):
     elif clf_type == ClassifierType.RANDOM_FOREST:
         clf = RandomForestClassifier(n_estimators=100, max_depth=None, n_jobs=3, random_state=42)
     elif clf_type == ClassifierType.RANDOM_FOREST_REGRESSOR:
-        clf = RandomForestRegressor(n_estimators=10, max_depth=None, n_jobs=3, random_state=42)
+        clf = RandomForestRegressor(n_estimators=100, max_depth=None, n_jobs=3, random_state=42)
     else:
         raise ValueError("Unknown classifier type specified")
 
@@ -88,8 +78,9 @@ def _get_tuned_parameters(clf_type: ClassifierType) -> Dict:
 def perform_gridsearch(train_data: np.ndarray, train_target: np.ndarray,
                        test_data: np.ndarray, test_target: np.ndarray,
                        number_of_bits_per_feature_max: int,
-                       clf_type: ClassifierType=ClassifierType.RANDOM_FOREST,
-                       gridsearch_type: GridSearchType=GridSearchType.PARFIT
+                       clf_type: ClassifierType,
+                       gridsearch_type: GridSearchType,
+                       path: str
                        ):
     filename = datetime.datetime.now().strftime("%Y_%m_%d_%H_%M_%S") + "_gridsearch_results.txt"
 
@@ -123,7 +114,7 @@ def perform_gridsearch(train_data: np.ndarray, train_target: np.ndarray,
         else:
             raise ValueError('Requested GridSearchType is not available')
         print(f'number of bits: {i}')
-        _save_score_and_model_to_file(best_score, best_model, filename)
+        _save_score_and_model_to_file(best_score, best_model, path + "/" + filename)
 
 
 def test_dataset(number_of_bits_per_feature: int,
@@ -144,12 +135,6 @@ def test_dataset(number_of_bits_per_feature: int,
     # while at some point I was considering not quantizing the test data,
     # I came to a conclusion that it is not the way it will be performed in hardware
     train_data_quantized, test_data_quantized = quantize_data(train_data, test_data, number_of_bits_per_feature)
-
-    # TODO(MF): here we should probably search for the best parameters of the classifier
-    # print("Gridsearch")
-    # grid_search(train_data_quantized, train_target, ClassifierType.decision_tree)
-    # print("Parfit test")
-    # parfit_gridsearch(train_data_quantized, train_target, test_data_quantized, test_target, clf_type, True)
 
     clf.fit(train_data_quantized, train_target)
     test_predicted_quantized = clf.predict(test_data_quantized)
@@ -174,7 +159,7 @@ def test_dataset(number_of_bits_per_feature: int,
     )
 
     # optionally check the performance of the scikit classifier for reference (does not work for own classifier)
-    test_classification_performance(clf, test_data, 10)
+    test_classification_performance(clf, test_data, 10, 10)
 
 
 def report_classifier(clf, expected, predicted):
@@ -182,7 +167,11 @@ def report_classifier(clf, expected, predicted):
 
     print("Classification report for classifier %s:\n%s\n"
           % (clf, metrics.classification_report(expected, predicted)))
-    print("Confusion matrix:\n%s" % metrics.confusion_matrix(expected, predicted))
+    cm = metrics.confusion_matrix(expected, predicted)
+    cm = cm / cm.sum(axis=1)[:, None] * 100
+
+    np.set_printoptions(formatter={'float': '{: 2.2f}'.format})
+    print(f"Confusion matrix:\n {cm}")
 
     f1_score = metrics.f1_score(expected, predicted, average='weighted')
     precision = metrics.precision_score(expected, predicted, average='weighted')
@@ -210,18 +199,17 @@ def quantize_data(train_data: np.ndarray, test_data: np.ndarray, number_of_bits:
 def generate_my_classifier(clf, number_of_features, number_of_bits_per_feature: int):
     if isinstance(clf, DecisionTreeClassifier):
         print("Creating decision tree classifier!")
-        my_clf = Tree("TreeTest", number_of_features, number_of_bits_per_feature)
-
+        my_clf = Tree("DecisionTreeClassifier", number_of_features, number_of_bits_per_feature)
     elif isinstance(clf, RandomForestClassifier):
         print("Creating random forest classifier!")
-        my_clf = RandomForest("HoG_forest", number_of_features, number_of_bits_per_feature)
+        my_clf = RandomForest("RandomForestClassifier", number_of_features, number_of_bits_per_feature)
     else:
         print("Unknown type of classifier!")
         raise ValueError("Unknown type of classifier!")
 
     my_clf.build(clf)
     my_clf.print_parameters()
-    my_clf.create_vhdl_file()
+    my_clf.create_vhdl_file("./../../data/vhdl/")
 
     return my_clf
 
