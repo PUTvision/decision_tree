@@ -24,24 +24,24 @@ def test_dataset(number_of_bits_per_feature: int,
     clf.fit(train_data, train_target)
     test_predicted = clf.predict(test_data)
     print("scikit clf with test data:")
-    report_classifier(clf, test_target, test_predicted)
+    report_performance(clf, clf_type, test_target, test_predicted)
 
     # perform quantization of train and test data
     # while at some point I was considering not quantizing the test data,
     # I came to a conclusion that it is not the way it will be performed in hardware
-    train_data_quantized, test_data_quantized = quantize_data(train_data, test_data, number_of_bits_per_feature)
+    train_data_quantized, test_data_quantized = quantize_data(train_data, test_data, number_of_bits_per_feature, True)
 
     clf.fit(train_data_quantized, train_target)
     test_predicted_quantized = clf.predict(test_data_quantized)
     print("scikit clf with train and test data quantized:")
-    report_classifier(clf, test_target, test_predicted_quantized)
+    report_performance(clf, clf_type, test_target, test_predicted_quantized)
 
     # generate own classifier based on the one from scikit
     number_of_features = len(train_data[0])
     my_clf = generate_my_classifier(clf, number_of_features, number_of_bits_per_feature)
     my_clf_test_predicted_quantized = my_clf.predict(test_data_quantized)
     print("own clf with train and test data quantized:")
-    report_classifier(my_clf, test_target, my_clf_test_predicted_quantized)
+    report_performance(my_clf, clf_type, test_target, my_clf_test_predicted_quantized)
 
     differences_scikit_my = np.sum(test_predicted_quantized != my_clf_test_predicted_quantized)
     print(f"Number of differences between scikit_qunatized and my_quantized: {differences_scikit_my}")
@@ -57,7 +57,14 @@ def test_dataset(number_of_bits_per_feature: int,
     _test_classification_performance(clf, test_data, 10, 10)
 
 
-def report_classifier(clf, expected, predicted):
+def report_performance(clf, clf_type: ClassifierType, expected: np.ndarray, predicted: np.ndarray):
+    if clf_type == ClassifierType.RANDOM_FOREST_REGRESSOR:
+        _report_regressor(expected, predicted)
+    else:
+        _report_classifier(clf, expected, predicted)
+
+
+def _report_classifier(clf, expected: np.ndarray, predicted: np.ndarray):
     print("Detailed classification report:")
 
     print("Classification report for classifier %s:\n%s\n"
@@ -76,6 +83,19 @@ def report_classifier(clf, expected, predicted):
     print(f"precision: {precision:{2}.{4}}")
     print(f"recall: {recall:{2}.{4}}")
     print(f"accuracy: {accuracy:{2}.{4}}")
+
+
+def _report_regressor(expected: np.ndarray, predicted: np.ndarray):
+    print("Detailed regression report:")
+
+    mae = metrics.mean_absolute_error(expected, predicted)
+    mse = metrics.mean_squared_error(expected, predicted)
+    r2s = metrics.r2_score(expected, predicted)
+    evs = metrics.explained_variance_score(expected, predicted)
+    print(f"mean_absolute_error: {mae:{2}.{4}}")
+    print(f"mean_squared_error: {mse:{2}.{4}}")
+    print(f"coefficient_of_determination: {r2s:{2}.{4}}")
+    print(f"explained_variance_score: {evs:{2}.{4}}")
 
 
 def generate_my_classifier(clf, number_of_features, number_of_bits_per_feature: int):

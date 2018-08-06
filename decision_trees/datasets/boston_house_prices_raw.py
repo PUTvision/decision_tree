@@ -1,15 +1,15 @@
 from typing import Tuple
+
 import numpy as np
 from sklearn import datasets
-from sklearn.utils import shuffle
+from sklearn.model_selection import train_test_split
 
 from decision_trees.datasets.dataset_base import DatasetBase
 
 
 class BostonRaw(DatasetBase):
-    def __init__(self, number_of_train_samples: int, number_of_test_samples: int):
-        self._number_of_train_samples = number_of_train_samples
-        self._number_of_test_samples = number_of_test_samples
+    def __init__(self):
+        pass
 
     def load_data(self) -> Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
         boston = datasets.load_boston()
@@ -17,26 +17,15 @@ class BostonRaw(DatasetBase):
         # print(boston.target.shape)
         # print(np.unique(boston.target))
 
-        # it is necessary to shuffle the data as all 0's are at the front and all 9's are at the end
-        boston.data, boston.target = shuffle(boston.data, boston.target)
-
-        train_data = boston.data[:self._number_of_train_samples]
-        train_target = boston.target[:self._number_of_train_samples]
-        test_data = boston.data[self._number_of_train_samples:self._number_of_train_samples+self._number_of_test_samples]
-        test_target = boston.target[self._number_of_train_samples:self._number_of_train_samples+self._number_of_test_samples]
-
-        # TODO(MF): insert normalisation routine here
+        data = self._normalise(boston.data)
+        train_data, test_data, train_target, test_target = train_test_split(data, boston.target, test_size=0.1,
+                                                                            random_state=42)
 
         return train_data, train_target, test_data, test_target
 
     @staticmethod
     def _normalise(data: np.ndarray):
-        # in case of MNIST data it is possible to just divide each data by maximum value
-        # each feature is in range 0-255
-        # TODO(MF): add normalisation
-        data = data / 255
-
-        return data
+        return (data - np.min(data, 0)) / np.ptp(data, 0)
 
 
 def test_boston_raw():
@@ -57,24 +46,19 @@ def test_boston_raw():
     assert True
 
 
-if __name__ == "__main__":
-    d = BostonRaw(400, 100)
-
+def main():
+    d = BostonRaw()
     train_data, train_target, test_data, test_target = d.load_data()
+    print(f'np.shape(train_data): {np.shape(train_data)}')
+    print(f'np.unique(test_target): {np.unique(test_target)}')
 
-    print(f"train_data.shape: {train_data.shape}")
+    from decision_trees import dataset_tester
 
-    from sklearn.ensemble import RandomForestRegressor
+    dataset_tester.test_dataset(32,
+                                train_data, train_target, test_data, test_target,
+                                dataset_tester.ClassifierType.RANDOM_FOREST_REGRESSOR,
+                                )
 
-    clf = RandomForestRegressor(n_estimators=10, max_depth=None, n_jobs=3, random_state=42)
-    clf.fit(train_data, train_target)
-    test_predicted = clf.predict(test_data)
 
-    diffs = test_target - test_predicted
-    for diff, expected, predicted in zip(diffs, test_target, test_predicted):
-        print(f"expected: {expected}, predicted: {predicted}, diff: {diff:{1}.{3}}, relative error: {diff/expected:{1}.{3}}")
-
-    # dataset_tester.test_dataset(40,
-    #                             train_data, train_target, test_data, test_target,
-    #                             dataset_tester.ClassifierType.random_forest_regressor,
-    #                             )
+if __name__ == '__main__':
+    main()

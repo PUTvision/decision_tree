@@ -73,12 +73,12 @@ def _scikit_gridsearch(
         clf_type: ClassifierType
 ):
     # perform grid search to find best parameters
-    scores = ['f1_weighted']
+    scores = ['neg_mean_squared_error'] if clf_type == ClassifierType.RANDOM_FOREST_REGRESSOR else ['f1_weighted']
     # alternatives: http://scikit-learn.org/stable/modules/model_evaluation.html#common-cases-predefined-values
 
     tuned_parameters = get_tuned_parameters(clf_type)
 
-    #for score in scores:
+    # for score in scores:
     score = scores[0]
 
     # print("# Tuning hyper-parameters for %s" % score)
