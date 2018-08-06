@@ -6,6 +6,9 @@ import scipy.fftpack
 import numpy as np
 
 from decision_trees.datasets.dataset_base import DatasetBase
+from decision_trees.dataset_tester import test_dataset
+from decision_trees.gridsearch import perform_gridsearch
+from decision_trees.utils.constants import ClassifierType, GridSearchType
 
 
 class Terrain(DatasetBase):
@@ -115,12 +118,17 @@ def main():
     print(f'np.shape(train_data): {np.shape(train_data)}')
     print(f'np.unique(test_target): {np.unique(test_target)}')
 
-    from decision_trees import dataset_tester
+    test_dataset(32,
+                 train_data, train_target, test_data, test_target,
+                 ClassifierType.RANDOM_FOREST
+                 )
 
-    dataset_tester.test_dataset(32,
-                                train_data, train_target, test_data, test_target,
-                                dataset_tester.ClassifierType.RANDOM_FOREST,
-                                )
+    perform_gridsearch(train_data, train_target, test_data, test_target,
+                       10 - 1,
+                       ClassifierType.RANDOM_FOREST,
+                       GridSearchType.NONE,
+                       './../../data/gridsearch_results/'
+                       )
 
 
 if __name__ == '__main__':

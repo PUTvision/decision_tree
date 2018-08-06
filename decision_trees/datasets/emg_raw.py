@@ -4,6 +4,9 @@ import os
 import numpy as np
 
 from decision_trees.datasets.dataset_base import DatasetBase
+from decision_trees.dataset_tester import test_dataset
+from decision_trees.gridsearch import perform_gridsearch
+from decision_trees.utils.constants import ClassifierType, GridSearchType
 
 
 class EMGRaw(DatasetBase):
@@ -92,17 +95,16 @@ if __name__ == "__main__":
     print(f"np.unique(train_target): {np.unique(train_target)}")
     print(f"np.unique(test_target): {np.unique(test_target)}")
 
-    from decision_trees import dataset_tester
+    test_dataset(8,
+                 train_data, train_target,
+                 test_data, test_target,
+                 ClassifierType.RANDOM_FOREST,
+                 )
 
-    dataset_tester.perform_gridsearch(train_data[:19000], train_target[:19000],
-                                      test_data[:10000], test_target[:10000],
-                                      10 - 1,
-                                      clf_type=dataset_tester.ClassifierType.RANDOM_FOREST,
-                                      gridsearch_type=dataset_tester.GridSearchType.NONE
-                                      )
-
-    # dataset_tester.test_dataset(8,
-    #                             train_data[:19000], train_target[:19000],
-    #                             test_data[:10000], test_target[:10000],
-    #                             dataset_tester.ClassifierType.RANDOM_FOREST,
-    #                             )
+    perform_gridsearch(train_data, train_target,
+                       test_data, test_target,
+                       10 - 1,
+                       ClassifierType.RANDOM_FOREST,
+                       GridSearchType.NONE,
+                       './../../data/gridsearch_results/'
+                       )
