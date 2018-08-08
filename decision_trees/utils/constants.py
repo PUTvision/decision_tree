@@ -57,6 +57,17 @@ def get_tuned_parameters(clf_type: ClassifierType) -> Dict:
             # 'n_jobs': [-1],
             'random_state': [42]
         }
+    elif clf_type == ClassifierType.RANDOM_FOREST_REGRESSOR:
+        tuned_parameters = {
+            'max_depth': [10, 20, 50, 100, None],
+            # criterion
+            'n_estimators': [10, 20, 50, 100, 200],
+            # 'max_features': ['sqrt', 'log2'],
+            # 'min_samples_leaf': [1, 5, 10, 25, 50, 100, 125, 150, 175, 200],
+            'min_samples_split': [2],  # [2, 3, 4, 5, 6, 7, 8, 9, 10, 15, 20, 30, 40, 50, 75, 100]
+            # 'n_jobs': [-1],
+            'random_state': [42]
+        }
     else:
         raise ValueError("Unknown classifier type specified")
 

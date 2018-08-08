@@ -1,16 +1,12 @@
-import numpy as np
 import datetime
-
-from sklearn.model_selection import GridSearchCV, ParameterGrid
-from sklearn.ensemble import RandomForestClassifier
+import numpy as np
+from sklearn.ensemble import RandomForestClassifier, RandomForestRegressor
+from sklearn.model_selection import GridSearchCV, ParameterGrid, PredefinedSplit
 from sklearn.tree import DecisionTreeClassifier
-from sklearn import metrics
-from sklearn.metrics import classification_report
 
 # TODO(MF): original parfit did not work correctly with our data
 # from parfit.parfit import bestFit, plotScores
 from decision_trees.own_parfit.parfit import bestFit
-
 from decision_trees.utils.constants import ClassifierType
 from decision_trees.utils.constants import GridSearchType
 from decision_trees.utils.constants import get_classifier, get_tuned_parameters
@@ -93,21 +89,23 @@ def _scikit_gridsearch(
     # internally, which means that the final scor will be calculated on this data and is different than the one
     # calculated on test data
 
+    data = np.concatenate((train_data, test_data))
+    target = np.concatenate((train_target, test_target))
+
+    labels = np.full((len(data),), -1, dtype=np.int8)
+    labels[len(train_data):] = 1
+    cv = PredefinedSplit(labels)
+
     if clf_type == ClassifierType.DECISION_TREE:
-        clf = GridSearchCV(DecisionTreeClassifier(), tuned_parameters, cv=5, scoring=f'{score}', n_jobs=3)
+        clf = GridSearchCV(DecisionTreeClassifier(), tuned_parameters, cv=cv, scoring=score, n_jobs=3)
     elif clf_type == ClassifierType.RANDOM_FOREST:
-        clf = GridSearchCV(RandomForestClassifier(), tuned_parameters, cv=5, scoring=f'{score}', n_jobs=3)
+        clf = GridSearchCV(RandomForestClassifier(), tuned_parameters, cv=cv, scoring=score, n_jobs=3)
+    elif clf_type == ClassifierType.RANDOM_FOREST_REGRESSOR:
+        clf = GridSearchCV(RandomForestRegressor(), tuned_parameters, cv=cv, scoring=score, n_jobs=3)
     else:
         raise ValueError('Unknown classifier type specified')
 
-    clf = clf.fit(train_data, train_target)
-
-    clf.score(test_data, test_target)
-
-    expected, predicted = test_target, clf.predict(test_data)
-    f1_score = metrics.f1_score(expected, predicted, average='weighted')
-    print(f1_score)
-    classification_report(expected, predicted)
+    clf = clf.fit(data, target)
 
     # print("Best parameters set found on development set:")
     # print(clf.best_params_)
