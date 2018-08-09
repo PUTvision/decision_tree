@@ -39,9 +39,9 @@ def get_tuned_parameters(clf_type: ClassifierType) -> Dict:
 
     if clf_type == ClassifierType.DECISION_TREE:
         tuned_parameters = {
-            'max_depth': [10, 20, 50, 100],  # [5, 10, 15, 20, 30, 40, 50, 60, 70, 80, 90, 100, None],
+            'max_depth': [10, 20, 50, 100, None],  # [5, 10, 15, 20, 30, 40, 50, 60, 70, 80, 90, 100, None],
             # 'splitter': ["best", "random"],
-            'min_samples_split': [2, 10],  # [2, 3, 4, 5, 6, 7, 8, 9, 10, 15, 20]
+            'min_samples_split': [2, 5, 10],  # [2, 3, 4, 5, 6, 7, 8, 9, 10, 15, 20]
             # 'min_samples_split': [0.001, 0.002, 0.003, 0.004, 0.005, 0.01, 0.02, 0.05]
             'random_state': [42]
         }
@@ -49,11 +49,11 @@ def get_tuned_parameters(clf_type: ClassifierType) -> Dict:
         tuned_parameters = {
             'max_depth': [10, 20, 50, 100, None],
             # criterion
-            'n_estimators': [10, 20, 50, 100, 200],
+            'n_estimators': [16, 32, 64, 128, 256],
             # 'max_features': ['sqrt', 'log2'],
             # 'min_samples_leaf': [1, 5, 10, 25, 50, 100, 125, 150, 175, 200],
-            'min_samples_split': [2],  # [2, 3, 4, 5, 6, 7, 8, 9, 10, 15, 20, 30, 40, 50, 75, 100]
-            'class_weight': [None],  # , 'balanced'],
+            'min_samples_split': [2, 5, 10],  # [2, 3, 4, 5, 6, 7, 8, 9, 10, 15, 20, 30, 40, 50, 75, 100]
+            # 'class_weight': [None],  # , 'balanced'],
             # 'n_jobs': [-1],
             'random_state': [42]
         }
@@ -61,10 +61,10 @@ def get_tuned_parameters(clf_type: ClassifierType) -> Dict:
         tuned_parameters = {
             'max_depth': [10, 20, 50, 100, None],
             # criterion
-            'n_estimators': [10, 20, 50, 100, 200],
+            'n_estimators': [16, 32, 64, 128, 256],
             # 'max_features': ['sqrt', 'log2'],
             # 'min_samples_leaf': [1, 5, 10, 25, 50, 100, 125, 150, 175, 200],
-            'min_samples_split': [2],  # [2, 3, 4, 5, 6, 7, 8, 9, 10, 15, 20, 30, 40, 50, 75, 100]
+            'min_samples_split': [2, 5, 10],  # [2, 3, 4, 5, 6, 7, 8, 9, 10, 15, 20, 30, 40, 50, 75, 100]
             # 'n_jobs': [-1],
             'random_state': [42]
         }
