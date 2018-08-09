@@ -4,7 +4,6 @@ import os
 import numpy as np
 
 from decision_trees.datasets.dataset_base import DatasetBase
-from decision_trees.dataset_tester import test_dataset
 from decision_trees.gridsearch import perform_gridsearch
 from decision_trees.utils.constants import ClassifierType, GridSearchType
 
@@ -95,16 +94,13 @@ if __name__ == "__main__":
     print(f"np.unique(train_target): {np.unique(train_target)}")
     print(f"np.unique(test_target): {np.unique(test_target)}")
 
-    test_dataset(8,
-                 train_data, train_target,
-                 test_data, test_target,
-                 ClassifierType.RANDOM_FOREST,
-                 )
+    d.test_as_classifier(16)
 
     perform_gridsearch(train_data, train_target,
                        test_data, test_target,
-                       10 - 1,
+                       [16, 12, 8, 6, 4, 2, 1],
                        ClassifierType.RANDOM_FOREST,
-                       GridSearchType.NONE,
-                       './../../data/gridsearch_results/'
+                       GridSearchType.PARFIT,
+                       './../../data/gridsearch_results/',
+                       d.__class__.__name__
                        )

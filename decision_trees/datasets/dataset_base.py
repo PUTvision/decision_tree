@@ -3,7 +3,8 @@ from typing import Tuple
 
 import numpy as np
 
-from decision_trees import dataset_tester
+from decision_trees.dataset_tester import test_dataset
+from decision_trees.utils.constants import ClassifierType, GridSearchType
 
 
 class DatasetBase(metaclass=abc.ABCMeta):
@@ -16,18 +17,19 @@ class DatasetBase(metaclass=abc.ABCMeta):
     def _normalise(data: np.ndarray) -> np.ndarray:
         pass
 
-    def run(self):
+    def test_as_classifier(self, number_of_bits_per_feature: int):
         train_data, train_target, test_data, test_target = self.load_data()
 
-        dataset_tester.test_dataset(8,
-                                    train_data, train_target, test_data, test_target,
-                                    dataset_tester.ClassifierType.DECISION_TREE,
-                                    )
+        print('Testing decision tree classifier')
+        test_dataset(
+            number_of_bits_per_feature,
+            train_data, train_target, test_data, test_target,
+            ClassifierType.DECISION_TREE
+        )
 
-    def run_grid_search(self):
-        train_data, train_target, test_data, test_target = self.load_data()
-
-        dataset_tester.grid_search(train_data, train_target,
-                                   test_data, test_target,
-                                   dataset_tester.ClassifierType.DECISION_TREE
-                                   )
+        print('Testing random forest classifier')
+        test_dataset(
+            number_of_bits_per_feature,
+            train_data, train_target, test_data, test_target,
+            ClassifierType.RANDOM_FOREST
+        )

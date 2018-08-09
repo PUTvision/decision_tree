@@ -49,10 +49,10 @@ def test_mnist_raw():
     number_of_test_samples = 100  # 70000 - number_of_train_samples
     # END OF PARAMETERS SETTING
     if (number_of_train_samples + number_of_test_samples) > 70000:
-        print("ERROR, too much samples set!")
+        print("ERROR, too many samples set!")
     #####################################
 
     d = MnistRaw(number_of_train_samples, number_of_test_samples)
-    d.run()
+    d.test_as_classifier(8)
 
     assert True
