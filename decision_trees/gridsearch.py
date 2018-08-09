@@ -1,3 +1,5 @@
+from typing import List
+
 import datetime
 import numpy as np
 from sklearn.ensemble import RandomForestClassifier, RandomForestRegressor
@@ -15,13 +17,14 @@ from decision_trees.utils.convert_to_fixed_point import quantize_data
 
 def perform_gridsearch(train_data: np.ndarray, train_target: np.ndarray,
                        test_data: np.ndarray, test_target: np.ndarray,
-                       number_of_bits_per_feature_max: int,
+                       number_of_bits_per_feature_to_test: List[int],
                        clf_type: ClassifierType,
                        gridsearch_type: GridSearchType,
-                       path: str
+                       path: str,
+                       name: str
                        ):
     filename_with_path = path + '/' + datetime.datetime.now().strftime('%Y_%m_%d_%H_%M_%S') \
-                         + '_' + clf_type.name + '_gridsearch_results.txt'
+                         + '_' + name + '_' + clf_type.name + '_gridsearch_results.txt'
 
     # first train on the non-quantized data
     if gridsearch_type == GridSearchType.SCIKIT:
@@ -39,24 +42,36 @@ def perform_gridsearch(train_data: np.ndarray, train_target: np.ndarray,
     _save_score_and_model_to_file(best_score, best_model, filename_with_path)
 
     # repeat on quantized data with different number of bits
-    for i in range(number_of_bits_per_feature_max, 0, -1):
-        train_data_quantized, test_data_quantized = quantize_data(train_data, test_data, i, False, './../../data/')
+    for bit_width in number_of_bits_per_feature_to_test:
+        train_data_quantized, test_data_quantized = quantize_data(
+            train_data, test_data, bit_width,
+            flag_save_details_to_file=False, path='./../../data/'
+        )
 
         if gridsearch_type == GridSearchType.SCIKIT:
-            best_model, best_score = _scikit_gridsearch(train_data_quantized, train_target, test_data, test_target, clf_type)
+            best_model, best_score = _scikit_gridsearch(
+                train_data_quantized, train_target,
+                test_data, test_target,
+                clf_type
+            )
         elif gridsearch_type == GridSearchType.PARFIT:
             best_model, best_score = _parfit_gridsearch(
                 train_data_quantized, train_target,
                 test_data_quantized, test_target,
-                clf_type, False
+                clf_type, show_plot=False
             )
         elif gridsearch_type == GridSearchType.NONE:
-            best_model, best_score = _none_gridsearch(train_data_quantized, train_target, test_data, test_target, clf_type)
+            best_model, best_score = _none_gridsearch(
+                train_data_quantized, train_target,
+                test_data, test_target,
+                clf_type
+            )
         else:
             raise ValueError('Requested GridSearchType is not available')
-        print(f'number of bits: {i}')
+
+        print(f'number of bits: {bit_width}')
         with open(filename_with_path, 'a') as f:
-            print(f'number of bits: {i}', file=f)
+            print(f'number of bits: {bit_width}', file=f)
         _save_score_and_model_to_file(best_score, best_model, filename_with_path)
 
 
@@ -152,6 +167,7 @@ def _parfit_gridsearch(
     else:
         raise ValueError("Unknown classifier type specified")
 
+    from sklearn import metrics
     best_model, best_score, all_models, all_scores = bestFit(model, ParameterGrid(grid),
                                                              train_data, train_target, test_data, test_target,
                                                              predictType='predict',
