@@ -16,25 +16,28 @@ def run_classification_database(
         bit_width_to_test: List[int],
         path_with_gridsearch_results: str,
 ):
-    train_data, train_target, test_data, test_target = d.load_data()
+    try:
+        train_data, train_target, test_data, test_target = d.load_data()
 
-    perform_gridsearch(
-        train_data, train_target, test_data, test_target,
-        bit_width_to_test,
-        ClassifierType.DECISION_TREE,
-        GridSearchType.SCIKIT,
-        path_with_gridsearch_results,
-        d.__class__.__name__
-    )
+        perform_gridsearch(
+            train_data, train_target, test_data, test_target,
+            bit_width_to_test,
+            ClassifierType.DECISION_TREE,
+            GridSearchType.SCIKIT,
+            path_with_gridsearch_results,
+            d.__class__.__name__
+        )
 
-    perform_gridsearch(
-        train_data, train_target, test_data, test_target,
-        bit_width_to_test,
-        ClassifierType.RANDOM_FOREST,
-        GridSearchType.SCIKIT,
-        path_with_gridsearch_results,
-        d.__class__.__name__
-    )
+        perform_gridsearch(
+            train_data, train_target, test_data, test_target,
+            bit_width_to_test,
+            ClassifierType.RANDOM_FOREST,
+            GridSearchType.SCIKIT,
+            path_with_gridsearch_results,
+            d.__class__.__name__
+        )
+    except Exception as e:
+        print(e)
 
 
 def run_regression_database(
@@ -42,16 +45,19 @@ def run_regression_database(
         bit_width_to_test: List[int],
         path_with_gridsearch_results: str,
 ):
-    train_data, train_target, test_data, test_target = d.load_data()
+    try:
+        train_data, train_target, test_data, test_target = d.load_data()
 
-    perform_gridsearch(
-        train_data, train_target, test_data, test_target,
-        bit_width_to_test,
-        ClassifierType.RANDOM_FOREST_REGRESSOR,
-        GridSearchType.SCIKIT,
-        path_with_gridsearch_results,
-        d.__class__.__name__
-    )
+        perform_gridsearch(
+            train_data, train_target, test_data, test_target,
+            bit_width_to_test,
+            ClassifierType.RANDOM_FOREST_REGRESSOR,
+            GridSearchType.SCIKIT,
+            path_with_gridsearch_results,
+            d.__class__.__name__
+        )
+    except Exception as e:
+        print(e)
 
 
 def experiment():
