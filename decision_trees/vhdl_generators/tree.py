@@ -234,11 +234,11 @@ class Tree(VHDLCreator):
                 ", features'length) then")
 
             self.current_indent += 1
-            text += self._insert_text_line_with_indent("splitResult(" + str(i) + ") <= '1';")
+            text += self._insert_text_line_with_indent("splitResult(" + str(i) + ") <= '0';")
             self.current_indent -= 1
             text += self._insert_text_line_with_indent("else")
             self.current_indent += 1
-            text += self._insert_text_line_with_indent("splitResult(" + str(i) + ") <= '0';")
+            text += self._insert_text_line_with_indent("splitResult(" + str(i) + ") <= '1';")
             self.current_indent -= 1
             text += self._insert_text_line_with_indent("end if;")
 

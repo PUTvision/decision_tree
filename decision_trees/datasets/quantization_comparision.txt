@@ -1,0 +1,10 @@
+Train data size before quantization: 455
+First element before quantization:
+[3.45397791e-04 2.00000000e-01 1.05205279e-01 0.00000000e+00
+ 1.19135802e-01 6.52807051e-01 3.53244078e-01 3.74205458e-01
+ 1.73913043e-01 5.53435115e-02 2.44680851e-01 9.88224318e-01
+ 7.89183223e-02]
+Size after quantization: 455
+First element after quantization:
+[0.     0.1875 0.125  0.     0.125  0.625  0.375  0.375  0.1875 0.0625
+ 0.25   1.     0.0625]
