@@ -3,7 +3,7 @@ from decision_trees.vhdl_generators.VHDLCreator import VHDLCreator
 import numpy as np
 import sklearn.tree
 
-from decision_trees.utils.convert_to_fixed_point import convert_to_fixed_point
+from decision_trees.utils.convert_to_fixed_point import convert_to_fixed_point, convert_fixed_point_to_integer
 from decision_trees.utils.constants import ClassifierType
 
 
@@ -230,7 +230,7 @@ class Tree(VHDLCreator):
             text += self._insert_text_line_with_indent(
                 "if unsigned(features(" +
                 str(split.var_idx) + ")) <= to_unsigned(" +
-                str(int(split.value_to_compare)) +
+                str(convert_fixed_point_to_integer(split.value_to_compare, self._number_of_bits_per_feature)) +
                 ", features'length) then")
 
             self.current_indent += 1
@@ -323,6 +323,9 @@ class Tree(VHDLCreator):
             # print("Feature: " + str(tree_.threshold[node]) + ", after conversion: "
             # + str(convert_to_fixed_point(tree_.threshold[node], self._number_of_bits_per_feature)))
 
+            #print(f'tree_.threshold[node]: {tree_.threshold[node]:{1}.{3}}')
+            #print(f'convert_to_fixed_point: {convert_to_fixed_point(tree_.threshold[node], self._number_of_bits_per_feature):{1}.{3}}')
+
             # then create a split
             self._add_new_split(
                 self._current_split_index,
@@ -364,3 +367,11 @@ class Tree(VHDLCreator):
                 following_splits_IDs,
                 following_splits_compare_values
             )
+
+    def create_vhdl_file(self, path: str):
+        with open(path + '/' + self._filename, 'w') as f:
+            text = ''
+            text += self._add_headers()
+            text += self._add_entity()
+            text += self._add_architecture()
+            f.write(text)

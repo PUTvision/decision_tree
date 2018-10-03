@@ -1,3 +1,5 @@
+from typing import List
+
 from decision_trees.vhdl_generators.VHDLCreator import VHDLCreator
 from decision_trees.vhdl_generators.tree import Tree
 
@@ -10,14 +12,14 @@ from decision_trees.utils.constants import ClassifierType
 class RandomForest(VHDLCreator):
 
     def __init__(self, name: str, number_of_features: int, number_of_bits_per_feature: int):
-        self.random_forest = []
+        self.random_forest: List[Tree] = []
 
         VHDLCreator.__init__(self, name, ClassifierType.RANDOM_FOREST.name,
                              number_of_features, number_of_bits_per_feature)
 
     def build(self, random_forest: sklearn.ensemble.RandomForestClassifier):
         for i, tree in enumerate(random_forest.estimators_):
-            tree_builder = Tree("tree_" + str(i), self._number_of_features, self._number_of_bits_per_feature)
+            tree_builder = Tree(f'tree_{i:02}', self._number_of_features, self._number_of_bits_per_feature)
             tree_builder.build(tree)
 
             self.random_forest.append(tree_builder)
@@ -126,3 +128,15 @@ class RandomForest(VHDLCreator):
         self.current_indent -= 1
 
         return text
+
+    def create_vhdl_file(self, path: str):
+        for d in self.random_forest:
+            d.create_vhdl_file(path)
+
+        with open(path + '/' + self._filename, 'w') as f:
+            text = ''
+            text += self._add_headers()
+            text += self._add_entity()
+            text += self._add_architecture()
+            f.write(text)
+

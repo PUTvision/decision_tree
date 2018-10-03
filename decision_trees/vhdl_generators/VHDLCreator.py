@@ -135,15 +135,6 @@ class VHDLCreator:
     def _add_architecture_process_section(self) -> str:
         return
 
-    def create_vhdl_file(self, path: str) -> str:
-        # open file for writing
-        file_to_write = open(path + "/" + self._filename, "w")
-        # add necessary headers
-        text = ""
-        text += self._add_headers()
-        text += self._add_entity()
-        text += self._add_architecture()
-
-        file_to_write.write(text)
-
-        file_to_write.close()
+    @abc.abstractmethod
+    def create_vhdl_file(self, path: str):
+        return
