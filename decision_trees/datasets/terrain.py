@@ -117,15 +117,15 @@ def main():
     print(f'np.shape(train_data): {np.shape(train_data)}')
     print(f'np.unique(test_target): {np.unique(test_target)}')
 
-    d.test_as_classifier(16)
+    d.test_as_classifier(2, './../../data/vhdl/')
 
-    perform_gridsearch(train_data, train_target, test_data, test_target,
-                       [16, 12, 8, 6, 4, 2, 1],
-                       ClassifierType.RANDOM_FOREST,
-                       GridSearchType.NONE,
-                       './../../data/gridsearch_results/',
-                       d.__class__.__name__
-                       )
+    # perform_gridsearch(train_data, train_target, test_data, test_target,
+    #                    [16, 12, 8, 6, 4, 2, 1],
+    #                    ClassifierType.RANDOM_FOREST,
+    #                    GridSearchType.NONE,
+    #                    './../../data/gridsearch_results/',
+    #                    d.__class__.__name__
+    #                    )
 
 
 if __name__ == '__main__':

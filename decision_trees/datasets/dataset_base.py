@@ -17,19 +17,23 @@ class DatasetBase(metaclass=abc.ABCMeta):
     def _normalise(data: np.ndarray) -> np.ndarray:
         pass
 
-    def test_as_classifier(self, number_of_bits_per_feature: int):
+    def test_as_classifier(self, number_of_bits_per_feature: int, path: str):
         train_data, train_target, test_data, test_target = self.load_data()
 
         print('Testing decision tree classifier')
         test_dataset(
             number_of_bits_per_feature,
             train_data, train_target, test_data, test_target,
-            ClassifierType.DECISION_TREE
+            ClassifierType.DECISION_TREE,
+            path,
+            self.__class__.__name__
         )
 
         print('Testing random forest classifier')
         test_dataset(
             number_of_bits_per_feature,
             train_data, train_target, test_data, test_target,
-            ClassifierType.RANDOM_FOREST
+            ClassifierType.RANDOM_FOREST,
+            path,
+            self.__class__.__name__
         )

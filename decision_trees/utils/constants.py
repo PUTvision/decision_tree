@@ -19,7 +19,7 @@ class GridSearchType(Enum):
 
 def get_classifier(clf_type: ClassifierType):
     if clf_type == ClassifierType.DECISION_TREE:
-        clf = DecisionTreeClassifier(criterion="gini", max_depth=None, splitter="random", random_state=42)
+        clf = DecisionTreeClassifier(criterion="gini", max_depth=None, random_state=42)
     elif clf_type == ClassifierType.RANDOM_FOREST:
         clf = RandomForestClassifier(n_estimators=100, max_depth=None, n_jobs=3, random_state=42)
     elif clf_type == ClassifierType.RANDOM_FOREST_REGRESSOR:
