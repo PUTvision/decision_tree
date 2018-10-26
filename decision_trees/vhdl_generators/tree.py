@@ -65,6 +65,7 @@ class Tree(VHDLCreator):
 
         self.splits = []
         self.leaves = []
+        self.decide_class_compares = 0
 
         VHDLCreator.__init__(self, name, ClassifierType.DECISION_TREE.name,
                              number_of_features, number_of_bits_per_feature)
@@ -136,6 +137,7 @@ class Tree(VHDLCreator):
         print("Depth: ", self.find_depth())
         print("Number of splits: ", len(self.splits))
         print("Number of leaves: ", len(self.leaves))
+        print("decide_class_compares: ", self.decide_class_compares)
 
     def print_splits(self):
         print("Splits: ")
@@ -272,6 +274,8 @@ class Tree(VHDLCreator):
             self.current_indent += 1
 
             for split_id, split_compare_value in zip(leaf.following_split_IDs, leaf.following_split_compare_values):
+
+                self.decide_class_compares += 1
 
                 text += self._insert_text_line_with_indent(
                     "splitResult(" + str(split_id) + ") = '" + str(split_compare_value) + "'")

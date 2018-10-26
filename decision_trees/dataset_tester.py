@@ -19,7 +19,7 @@ def test_dataset(number_of_bits_per_feature: int,
                  clf_type: ClassifierType,
                  path: str, name: str
                  ):
-    path = path + '/' + name + '_' + clf_type.name + '/'
+    path = path + '/' + name + '_' + str(number_of_bits_per_feature) + '_' + clf_type.name + '/'
 
     if not os.path.exists(path):
         os.makedirs(path)
@@ -122,8 +122,8 @@ def generate_my_classifier(clf, number_of_features: int, number_of_bits_per_feat
         raise ValueError("Unknown type of classifier!")
 
     my_clf.build(clf)
-    my_clf.print_parameters()
     my_clf.create_vhdl_file(path)
+    my_clf.print_parameters()
 
     return my_clf
 
