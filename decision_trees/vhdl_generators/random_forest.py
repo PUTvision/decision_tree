@@ -61,8 +61,20 @@ class RandomForest(VHDLCreator):
 
     def print_parameters(self):
         print(f"Number of decision trees: {len(self.random_forest)}")
-        # for tree in self.random_forest:
-        #     tree.print_parameters()
+        sum_depth = 0
+        number_of_splits = 0
+        number_of_leaves = 0
+        number_of_decide_class_compares = 0
+        for tree in self.random_forest:
+            sum_depth += tree.find_depth()
+            number_of_splits += len(tree.splits)
+            number_of_leaves += len(tree.leaves)
+            number_of_decide_class_compares += tree.decide_class_compares
+            # tree.print_parameters()
+        print("avg depth: ", sum_depth / len(self.random_forest))
+        print("avg number of splits: ", number_of_splits / len(self.random_forest))
+        print("avg number of leaves: ", number_of_leaves / len(self.random_forest))
+        print("avg decide_class_compares: ", number_of_decide_class_compares / len(self.random_forest))
 
     def _add_additional_headers(self) -> str:
         text = ""
@@ -75,11 +87,12 @@ class RandomForest(VHDLCreator):
     def _add_architecture_component_section(self) -> str:
         text = ""
 
-        text += self._insert_text_line_with_indent(f"component {ClassifierType.DECISION_TREE.name}")
-        text += self._add_entity_generics_section()
-        text += self._add_entity_port_section()
-        text += self._insert_text_line_with_indent(f"end {ClassifierType.DECISION_TREE.name};")
-        text += self._insert_text_line_with_indent("")
+        for i in range(0, len(self.random_forest)):
+            text += self._insert_text_line_with_indent(f"component tree_{i:02}")
+            text += self._add_entity_generics_section()
+            text += self._add_entity_port_section()
+            text += self._insert_text_line_with_indent(f"end component tree_{i:02};")
+            text += self._insert_text_line_with_indent("")
 
         # TODO(MF): add module for connecting the results
 
@@ -89,7 +102,7 @@ class RandomForest(VHDLCreator):
         text = ""
 
         text += self._insert_text_line_with_indent(f"type outputs_t\tis array({len(self.random_forest)}-1 downto 0)" +
-                                                   f" of unsigned({self._number_of_bits_per_feature}-1 downto 0);")
+                                                   f" of std_logic_vector({self._number_of_bits_for_class_index}-1 downto 0);")
 
         text += self._insert_text_line_with_indent("signal " + "outputs" + "\t\t:\t" + "outputs_t"
                                                    + "\t\t\t" + ":= (others=>(others=>'0'));")
@@ -97,13 +110,17 @@ class RandomForest(VHDLCreator):
         return text
 
     def _add_architecture_process_section(self) -> str:
-        text = ""
+        text = ''
 
         for i in range(0, len(self.random_forest)):
             text += self._add_port_mapping(i)
 
         # TODO(MF): add Marek's module for combinig the results
-        text += self._insert_text_line_with_indent("output <= std_logic_vector(outputs(0));")
+        for i in range(0, len(self.random_forest)):
+            text += self._insert_text_line_with_indent(
+                f'output({i*self._number_of_bits_for_class_index+self._number_of_bits_for_class_index-1} downto'
+                f' {i*self._number_of_bits_for_class_index}) <= std_logic_vector(outputs({i}));'
+            )
         text += self._insert_text_line_with_indent("")
 
         return text
@@ -112,7 +129,7 @@ class RandomForest(VHDLCreator):
         text = ""
 
         text += self._insert_text_line_with_indent(
-            f"{ClassifierType.DECISION_TREE.name}_{index}_INST : {ClassifierType.DECISION_TREE.name}"
+            f"{ClassifierType.DECISION_TREE.name}_{index}_INST : tree_{index:02}"
         )
         text += self._insert_text_line_with_indent("port map (")
         self.current_indent += 2
@@ -136,7 +153,7 @@ class RandomForest(VHDLCreator):
         with open(path + '/' + self._filename, 'w') as f:
             text = ''
             text += self._add_headers()
-            text += self._add_entity()
+            text += self._add_entity(len(self.random_forest))
             text += self._add_architecture()
             f.write(text)
 

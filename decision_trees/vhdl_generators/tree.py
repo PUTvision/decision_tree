@@ -67,7 +67,7 @@ class Tree(VHDLCreator):
         self.leaves = []
         self.decide_class_compares = 0
 
-        VHDLCreator.__init__(self, name, ClassifierType.DECISION_TREE.name,
+        VHDLCreator.__init__(self, name, name,
                              number_of_features, number_of_bits_per_feature)
 
     def build(self, tree):
