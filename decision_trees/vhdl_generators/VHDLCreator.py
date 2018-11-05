@@ -22,7 +22,7 @@ class VHDLCreator:
         self._custom_type_name = self.filename + "_t"
 
         # TODO - maybe this part can be found automatically
-        self._number_of_bits_for_class_index = 32
+        self._number_of_bits_for_class_index = 8
         self._number_of_bits_per_feature = number_of_bits_per_feature
         self._number_of_features = number_of_features
 
@@ -50,12 +50,12 @@ class VHDLCreator:
     def _add_additional_headers(self) -> str:
         return
 
-    def _add_entity(self) -> str:
+    def _add_entity(self, output_size_multiplier: int = 1) -> str:
         text = ""
 
         text += self._insert_text_line_with_indent("entity " + self._param_entity_name + " is")
         text += self._add_entity_generics_section()
-        text += self._add_entity_port_section()
+        text += self._add_entity_port_section(output_size_multiplier)
         text += self._insert_text_line_with_indent("end " + self._param_entity_name + ";")
         text += self._insert_text_line_with_indent("")
 
@@ -65,7 +65,7 @@ class VHDLCreator:
     def _add_entity_generics_section(self) -> str:
         return
 
-    def _add_entity_port_section(self) -> str:
+    def _add_entity_port_section(self, output_size_multiplier: int = 1) -> str:
         text = ""
 
         self.current_indent += 1
@@ -85,7 +85,7 @@ class VHDLCreator:
                                                    + "-1 downto 0);")
 
         text += self._insert_text_line_with_indent("output" + "\t\t\t" + ":" + "\t" + "out std_logic_vector("
-                                                   + str(self._number_of_bits_for_class_index)
+                                                   + str(self._number_of_bits_for_class_index * output_size_multiplier)
                                                    + "-1 downto 0)")
 
         self.current_indent -= 1
