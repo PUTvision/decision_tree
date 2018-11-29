@@ -113,11 +113,12 @@ class Terrain(DatasetBase):
 
 def main():
     d = Terrain('./../../data/datasets/terrain_data/')
+
     train_data, train_target, test_data, test_target = d.load_data()
     print(f'np.shape(train_data): {np.shape(train_data)}')
     print(f'np.unique(test_target): {np.unique(test_target)}')
 
-    d.test_as_classifier(2, './../../data/vhdl/')
+    d.test_as_classifier(8, './../../data/vhdl/')
 
     # perform_gridsearch(train_data, train_target, test_data, test_target,
     #                    [16, 12, 8, 6, 4, 2, 1],

@@ -62,6 +62,7 @@ def run_regression_database(
 
 def experiment():
     path_with_gridsearch_results = './../../data/gridsearch_results/'
+    path_with_vhdl_results = './../../data/vhdl/'
 
     run_classification_database(
         EMGRaw('./../../data/datasets/EMG/'),

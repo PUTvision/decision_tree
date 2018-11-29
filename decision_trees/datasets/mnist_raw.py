@@ -53,6 +53,20 @@ def test_mnist_raw():
     #####################################
 
     d = MnistRaw(number_of_train_samples, number_of_test_samples)
-    d.test_as_classifier(8)
+    d.test_as_classifier(8, './../../data/vhdl/')
 
     assert True
+
+
+def main():
+    d = MnistRaw(60000, 10000)
+
+    train_data, train_target, test_data, test_target = d.load_data()
+    print(f"train_data.shape: {train_data.shape}")
+    print(f"np.unique(test_target): {np.unique(test_target)}")
+
+    d.test_as_classifier(8, './../../data/vhdl/')
+
+
+if __name__ == "__main__":
+    main()

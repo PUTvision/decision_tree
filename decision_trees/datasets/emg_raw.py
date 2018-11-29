@@ -84,23 +84,26 @@ class EMGRaw(DatasetBase):
         return data
 
 
-if __name__ == "__main__":
+def main():
     d = EMGRaw("./../../data/datasets/EMG/")
 
     train_data, train_target, test_data, test_target = d.load_data()
-
     print(f"train_data.shape: {train_data.shape}")
     print(f"test_data.shape: {test_data.shape}")
     print(f"np.unique(train_target): {np.unique(train_target)}")
     print(f"np.unique(test_target): {np.unique(test_target)}")
 
-    d.test_as_classifier(16)
+    d.test_as_classifier(8, './../../data/vhdl/')
 
-    perform_gridsearch(train_data, train_target,
-                       test_data, test_target,
-                       [16, 12, 8, 6, 4, 2, 1],
-                       ClassifierType.RANDOM_FOREST,
-                       GridSearchType.PARFIT,
-                       './../../data/gridsearch_results/',
-                       d.__class__.__name__
-                       )
+    # perform_gridsearch(train_data, train_target,
+    #                    test_data, test_target,
+    #                    [16, 12, 8, 6, 4, 2, 1],
+    #                    ClassifierType.RANDOM_FOREST,
+    #                    GridSearchType.PARFIT,
+    #                    './../../data/gridsearch_results/',
+    #                    d.__class__.__name__
+    #                    )
+
+
+if __name__ == "__main__":
+    main()

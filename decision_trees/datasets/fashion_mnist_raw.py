@@ -42,7 +42,7 @@ def test_fashion_mnist_raw():
     #####################################
 
     d = FashionMnistRaw()
-    d.test_as_classifier(8)
+    d.test_as_classifier(8, './../../data/vhdl/')
 
     assert True
 
@@ -51,32 +51,29 @@ def main():
     d = FashionMnistRaw()
 
     train_data, train_target, test_data, test_target = d.load_data()
-
     print(f"train_data.shape: {train_data.shape}")
     print(f"np.unique(test_target): {np.unique(test_target)}")
 
-    from decision_trees import dataset_tester
-    from decision_trees.gridsearch import perform_gridsearch
-    from decision_trees.utils.constants import ClassifierType, GridSearchType
+    d.test_as_classifier(8, './../../data/vhdl/')
 
-    perform_gridsearch(
-        train_data[:60000], train_target[:60000],
-        test_data[:10000], test_target[:10000],
-        [16, 12, 8, 6, 4, 2, 1],
-        ClassifierType.DECISION_TREE,
-        GridSearchType.NONE,
-        "./../../data/gridsearch_results/",
-        d.__class__.__name__
-    )
+    # # this is the same as the code above, but on the fraction of the dataset and only for decision tree
+    # from decision_trees import dataset_tester
+    # from decision_trees.utils.constants import ClassifierType
+    # dataset_tester.test_dataset(
+    #     8,
+    #     train_data[:60000], train_target[:60000], test_data[:10000], test_target[:10000],
+    #     ClassifierType.DECISION_TREE
+    # )
 
-    # this is the same as the code below, but on the whole dataset
-    d.test_as_classifier(8)
-
-    dataset_tester.test_dataset(
-        8,
-        train_data[:60000], train_target[:60000], test_data[:10000], test_target[:10000],
-        ClassifierType.DECISION_TREE
-    )
+    # perform_gridsearch(
+    #     train_data[:60000], train_target[:60000],
+    #     test_data[:10000], test_target[:10000],
+    #     [16, 12, 8, 6, 4, 2, 1],
+    #     ClassifierType.DECISION_TREE,
+    #     GridSearchType.NONE,
+    #     "./../../data/gridsearch_results/",
+    #     d.__class__.__name__
+    # )
 
 
 if __name__ == "__main__":
