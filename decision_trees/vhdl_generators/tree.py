@@ -182,10 +182,10 @@ class Tree(VHDLCreator):
         text += self._insert_text_line_with_indent("signal " + "features" + "\t\t:\t" + "features_t"
                                                    + "\t\t\t" + ":= (others=>(others=>'0'));")
 
-        text += self._insert_text_line_with_indent("signal " + "splitResult" + "\t:\t" + "std_logic_vector("
+        text += self._insert_text_line_with_indent("signal " + "sr" + "\t:\t" + "std_logic_vector("
                                                    + str(len(self.splits)) + "-1 downto 0)"
                                                    + "\t\t\t" + ":= (others=>'0');")
-        text += self._insert_text_line_with_indent("signal " + "classIndex" + "\t:\t" + "unsigned("
+        text += self._insert_text_line_with_indent("signal " + "ci" + "\t:\t" + "unsigned("
                                                    + str(self._number_of_bits_for_class_index) + "-1 downto 0)"
                                                    + "\t\t\t" + ":= (others=>'0');")
 
@@ -199,7 +199,7 @@ class Tree(VHDLCreator):
         text += self._add_architecture_input_mapping()
         text += self._add_architecture_process_compare()
         text += self._add_architecture_process_decide_class()
-        text += self._insert_text_line_with_indent("output <= std_logic_vector(classIndex);")
+        text += self._insert_text_line_with_indent("output <= std_logic_vector(ci);")
         text += self._insert_text_line_with_indent("")
 
         return text
@@ -236,11 +236,11 @@ class Tree(VHDLCreator):
                 ", features'length) then")
 
             self.current_indent += 1
-            text += self._insert_text_line_with_indent("splitResult(" + str(i) + ") <= '0';")
+            text += self._insert_text_line_with_indent("sr(" + str(i) + ") <= '0';")
             self.current_indent -= 1
             text += self._insert_text_line_with_indent("else")
             self.current_indent += 1
-            text += self._insert_text_line_with_indent("splitResult(" + str(i) + ") <= '1';")
+            text += self._insert_text_line_with_indent("sr(" + str(i) + ") <= '1';")
             self.current_indent -= 1
             text += self._insert_text_line_with_indent("end if;")
 
@@ -270,20 +270,24 @@ class Tree(VHDLCreator):
 
         for leaf in self.leaves:
 
-            text += self._insert_text_line_with_indent("if ( ")
+            # text += self._insert_text_line_with_indent("if ( ")
             self.current_indent += 1
+            compare_line = "if ( "
 
             for split_id, split_compare_value in zip(leaf.following_split_IDs, leaf.following_split_compare_values):
 
                 self.decide_class_compares += 1
 
-                text += self._insert_text_line_with_indent(
-                    "splitResult(" + str(split_id) + ") = '" + str(split_compare_value) + "'")
+                # text += self._insert_text_line_with_indent(
+                compare_line += "sr(" + str(split_id) + ") = '" + str(split_compare_value) + "'" #)
 
                 if split_id != leaf.following_split_IDs[-1]:
-                    text += self._insert_text_line_with_indent("and")
+                    # text += self._insert_text_line_with_indent("and")
+                    compare_line += " and "
                 else:
-                    text += self._insert_text_line_with_indent(" ) then")
+                    # text += self._insert_text_line_with_indent(" ) then")
+                    compare_line += " ) then"
+                    text += self._insert_text_line_with_indent(compare_line)
                     self.current_indent += 1
 
                     result = leaf.class_idx
@@ -292,7 +296,7 @@ class Tree(VHDLCreator):
                     result_as_class = np.argmax(result[0])
 
                     text += self._insert_text_line_with_indent(
-                        "classIndex <= to_unsigned(" + str(result_as_class) + ", classIndex'length);"
+                        "ci <= to_unsigned(" + str(result_as_class) + ", ci'length);"
                     )
                     self.current_indent -= 1
                     text += self._insert_text_line_with_indent("end if;")
