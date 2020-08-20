@@ -1,5 +1,7 @@
 from decision_trees.vhdl_generators.VHDLCreator import VHDLCreator
 
+from typing import Union
+
 import numpy as np
 import sklearn.tree
 
@@ -131,13 +133,20 @@ class Tree(VHDLCreator):
 
         return chosen_class
 
-    def print_parameters(self):
+    def print_parameters(self, result_file: Union[str, None]=None):
+        t = ''
         # self.print_leaves()
         # self.print_splits()
-        print("Depth: ", self.find_depth())
-        print("Number of splits: ", len(self.splits))
-        print("Number of leaves: ", len(self.leaves))
-        print("decide_class_compares: ", self.decide_class_compares)
+        t += f'Depth: {self.find_depth()}\n'
+        t += f'Number of splits: {len(self.splits)}\n'
+        t += f'Number of leaves: {len(self.leaves)}\n'
+        t += f'decide_class_compares: {self.decide_class_compares}\n'
+
+        if result_file is not None:
+            with open(result_file, 'a+') as f:
+                f.write(t)
+        else:
+            print(t)
 
     def print_splits(self):
         print("Splits: ")

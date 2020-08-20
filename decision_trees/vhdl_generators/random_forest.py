@@ -1,4 +1,4 @@
-from typing import List
+from typing import List, Union
 
 from decision_trees.vhdl_generators.VHDLCreator import VHDLCreator
 from decision_trees.vhdl_generators.tree import Tree
@@ -59,8 +59,9 @@ class RandomForest(VHDLCreator):
 
         return chosen_class
 
-    def print_parameters(self):
-        print(f"Number of decision trees: {len(self.random_forest)}")
+    def print_parameters(self, result_file: Union[str, None]=None):
+        t = ''
+        t += f'Number of decision trees: {len(self.random_forest)}\n'
         sum_depth = 0
         number_of_splits = 0
         number_of_leaves = 0
@@ -71,10 +72,16 @@ class RandomForest(VHDLCreator):
             number_of_leaves += len(tree.leaves)
             number_of_decide_class_compares += tree.decide_class_compares
             # tree.print_parameters()
-        print("avg depth: ", sum_depth / len(self.random_forest))
-        print("avg number of splits: ", number_of_splits / len(self.random_forest))
-        print("avg number of leaves: ", number_of_leaves / len(self.random_forest))
-        print("avg decide_class_compares: ", number_of_decide_class_compares / len(self.random_forest))
+        t += f'avg depth: {sum_depth / len(self.random_forest)}\n'
+        t += f'avg number of splits: {number_of_splits / len(self.random_forest)}\n'
+        t += f'avg number of leaves: {number_of_leaves / len(self.random_forest)}\n'
+        t += f'avg decide_class_compares: {number_of_decide_class_compares / len(self.random_forest)}\n'
+
+        if result_file is not None:
+            with open(result_file, 'a+') as f:
+                f.write(t)
+        else:
+            print(t)
 
     def _add_additional_headers(self) -> str:
         text = ""
