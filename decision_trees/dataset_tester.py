@@ -1,4 +1,5 @@
 import time
+from typing import Union, Optional
 
 import numpy as np
 import os
@@ -13,25 +14,31 @@ from decision_trees.utils.convert_to_fixed_point import quantize_data
 from decision_trees.utils.constants import get_classifier
 
 
-def test_dataset(number_of_bits_per_feature: int,
-                 train_data: np.ndarray, train_target: np.ndarray,
-                 test_data: np.ndarray, test_target: np.ndarray,
-                 clf_type: ClassifierType,
-                 path: str, name: str
-                 ):
-    path = path + '/' + name + '_' + str(number_of_bits_per_feature) + '_' + clf_type.name + '/'
+def test_dataset(
+        number_of_bits_per_feature: int,
+        train_data: np.ndarray, train_target: np.ndarray,
+        test_data: np.ndarray, test_target: np.ndarray,
+        clf_type: ClassifierType,
+        max_depth: Optional[int], number_of_classifiers: Optional[int],
+        path: str, name: str
+):
+    path = os.path.join(
+        path,
+        name + '_' + str(number_of_bits_per_feature) + '_' + clf_type.name + '_' + str(max_depth) + '_' + str(number_of_classifiers)
+    )
+    result_file = os.path.join(path, 'score.txt')
 
     if not os.path.exists(path):
         os.makedirs(path)
 
     # first create classifier from scikit
-    clf = get_classifier(clf_type)
+    clf = get_classifier(clf_type, max_depth, number_of_classifiers)
 
     # first - train the classifiers on non-quantized data
     clf.fit(train_data, train_target)
     test_predicted = clf.predict(test_data)
     print("scikit clf with test data:")
-    report_performance(clf, clf_type, test_target, test_predicted)
+    report_performance(clf, clf_type, test_target, test_predicted, result_file)
 
     # perform quantization of train and test data
     # while at some point I was considering not quantizing the test data,
@@ -44,7 +51,7 @@ def test_dataset(number_of_bits_per_feature: int,
     clf.fit(train_data_quantized, train_target)
     test_predicted_quantized = clf.predict(test_data_quantized)
     print("scikit clf with train and test data quantized:")
-    report_performance(clf, clf_type, test_target, test_predicted_quantized)
+    report_performance(clf, clf_type, test_target, test_predicted_quantized, result_file)
 
     # generate own classifier based on the one from scikit
     number_of_features = len(train_data[0])
@@ -69,48 +76,80 @@ def test_dataset(number_of_bits_per_feature: int,
     # _test_classification_performance(clf, test_data, 10, 10)
 
 
-def report_performance(clf, clf_type: ClassifierType, expected: np.ndarray, predicted: np.ndarray):
+def report_performance(
+        clf, clf_type: ClassifierType,
+        expected: np.ndarray, predicted: np.ndarray,
+        result_file: Optional[str]=None
+):
     if clf_type == ClassifierType.RANDOM_FOREST_REGRESSOR:
-        _report_regressor(expected, predicted)
+        _report_regressor(expected, predicted, result_file)
     else:
-        _report_classifier(clf, expected, predicted)
+        _report_classifier(clf, expected, predicted, result_file)
 
 
-def _report_classifier(clf, expected: np.ndarray, predicted: np.ndarray):
-    print("Detailed classification report:")
+def _report_classifier(
+        clf,
+        expected: np.ndarray, predicted: np.ndarray,
+        result_file: Optional[str]=None
+):
+    t = ''
+    t += 'Detailed classification report:\n'
 
-    print("Classification report for classifier %s:\n%s\n"
-          % (clf, metrics.classification_report(expected, predicted)))
+    t += 'Classification report for classifier ' + str(clf) + '\n'
+    t += str(metrics.classification_report(expected, predicted)) + '\n'
     cm = metrics.confusion_matrix(expected, predicted)
     cm = cm / cm.sum(axis=1)[:, None] * 100
 
-    #np.set_printoptions(formatter={'float': '{: 2.2f}'.format})
-    print(f"Confusion matrix:\n {cm}")
+    # np.set_printoptions(formatter={'float': '{: 2.2f}'.format})
+    t += f'Confusion matrix:\n {cm}\n'
 
     f1_score = metrics.f1_score(expected, predicted, average='weighted')
     precision = metrics.precision_score(expected, predicted, average='weighted')
     recall = metrics.recall_score(expected, predicted, average='weighted')
     accuracy = metrics.accuracy_score(expected, predicted)
-    print(f"f1_score: {f1_score:{2}.{4}}")
-    print(f"precision: {precision:{2}.{4}}")
-    print(f"recall: {recall:{2}.{4}}")
-    print(f"accuracy: {accuracy:{2}.{4}}")
+    t += f'f1_score: {f1_score:{2}.{4}}\n'
+    t += f'precision: {precision:{2}.{4}}\n'
+    t += f'recall: {recall:{2}.{4}}\n'
+    t += f'accuracy: {accuracy:{2}.{4}}\n'
+
+    if result_file is not None:
+        with open(result_file, 'a+') as f:
+            f.write(t)
+    else:
+        print(t)
 
 
-def _report_regressor(expected: np.ndarray, predicted: np.ndarray):
-    print("Detailed regression report:")
+def _report_regressor(
+        expected: np.ndarray,
+        predicted: np.ndarray,
+        result_file: Optional[str]=None
+):
+    t = ''
+    t += 'Detailed regression report:\n'
 
     mae = metrics.mean_absolute_error(expected, predicted)
     mse = metrics.mean_squared_error(expected, predicted)
     r2s = metrics.r2_score(expected, predicted)
     evs = metrics.explained_variance_score(expected, predicted)
-    print(f"mean_absolute_error: {mae:{2}.{4}}")
-    print(f"mean_squared_error: {mse:{2}.{4}}")
-    print(f"coefficient_of_determination: {r2s:{2}.{4}}")
-    print(f"explained_variance_score: {evs:{2}.{4}}")
+    t += f'mean_absolute_error: {mae:{2}.{4}}\n'
+    t += f'mean_squared_error: {mse:{2}.{4}}\n'
+    t += f'coefficient_of_determination: {r2s:{2}.{4}}\n'
+    t += f'explained_variance_score: {evs:{2}.{4}}\n'
+
+    if result_file is not None:
+        with open(result_file, 'a+') as f:
+            f.write(t)
+    else:
+        print(t)
 
 
-def generate_my_classifier(clf, number_of_features: int, number_of_bits_per_feature: int, path: str):
+def generate_my_classifier(
+        clf,
+        number_of_features: int,
+        number_of_bits_per_feature: int,
+        path: str,
+        result_file: Union[str, None]=None
+):
     if isinstance(clf, DecisionTreeClassifier):
         print("Creating decision tree classifier!")
         my_clf = Tree("DecisionTreeClassifier", number_of_features, number_of_bits_per_feature)
@@ -123,7 +162,7 @@ def generate_my_classifier(clf, number_of_features: int, number_of_bits_per_feat
 
     my_clf.build(clf)
     my_clf.create_vhdl_file(path)
-    my_clf.print_parameters()
+    my_clf.print_parameters(result_file)
 
     return my_clf
 

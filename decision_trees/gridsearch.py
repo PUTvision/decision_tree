@@ -101,7 +101,7 @@ def _scikit_gridsearch(
     # print()
 
     # TODO: important note - this does not use test data to evaluate, instead it probably splits the train data
-    # internally, which means that the final scor will be calculated on this data and is different than the one
+    # internally, which means that the final score will be calculated on this data and is different than the one
     # calculated on test data
 
     data = np.concatenate((train_data, test_data))
