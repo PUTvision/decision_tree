@@ -25,6 +25,8 @@ class DatasetBase(metaclass=abc.ABCMeta):
             number_of_bits_per_feature,
             train_data, train_target, test_data, test_target,
             ClassifierType.DECISION_TREE,
+            None,
+            None,
             path,
             self.__class__.__name__
         )
@@ -34,6 +36,8 @@ class DatasetBase(metaclass=abc.ABCMeta):
             number_of_bits_per_feature,
             train_data, train_target, test_data, test_target,
             ClassifierType.RANDOM_FOREST,
+            None,
+            100,
             path,
             self.__class__.__name__
         )

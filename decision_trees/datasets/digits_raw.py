@@ -38,9 +38,9 @@ def sample_from_scikit():
     expected = digits.target[n_samples // 2:]
     predicted = classifier.predict(data[n_samples // 2:])
 
-    print("Classification report for classifier %s:\n%s\n"
+    print('Classification report for classifier %s:\n%s\n'
           % (classifier, metrics.classification_report(expected, predicted)))
-    print("Confusion matrix:\n%s" % metrics.confusion_matrix(expected, predicted))
+    print('Confusion matrix:\n%s' % metrics.confusion_matrix(expected, predicted))
 
     images_and_predictions = list(zip(digits.images[n_samples // 2:], predicted))
     for index, (image, prediction) in enumerate(images_and_predictions[:4]):
@@ -96,20 +96,33 @@ def test_digits_raw():
     # SET THE FOLLOWING PARAMETERS
     # DIGITS DATABASE
     # total number of samples: 1797 (each is 8x8)
-    number_of_train_samples = 1000
+    number_of_train_samples = 1700
     number_of_test_samples = 1797 - number_of_train_samples
     # END OF PARAMETERS SETTING
     # sanity check
     if (number_of_train_samples + number_of_test_samples) > 1797:
-        print("ERROR, too much samples set!")
+        print('ERROR, too much samples set!')
     #####################################
 
     d = DigitsRaw(number_of_train_samples, number_of_test_samples)
-    d.run()
+    for i in range(1, 9):
+        d.test_as_classifier(i, './../../data/vhdl/')
 
     assert True
 
 
-if __name__ == "__main__":
+def main():
+    pass
+    # d = DigitsRaw(1500, 297)
+    #
+    # train_data, train_target, test_data, test_target = d.load_data()
+    # print(f'train_data.shape: {train_data.shape}')
+    # print(f'np.unique(test_target): {np.unique(test_target)}')
+    #
+    # d.test_as_classifier(1, './../../data/vhdl/')
+
+
+if __name__ == '__main__':
     # sample_from_scikit()
-    test_digits_raw()
+    # test_digits_raw()
+    main()

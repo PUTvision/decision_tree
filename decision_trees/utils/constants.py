@@ -1,4 +1,4 @@
-from typing import Dict
+from typing import Dict, Optional
 from enum import Enum, auto
 
 from sklearn.ensemble import RandomForestClassifier, RandomForestRegressor
@@ -17,13 +17,17 @@ class GridSearchType(Enum):
     NONE = auto()
 
 
-def get_classifier(clf_type: ClassifierType):
+def get_classifier(
+        clf_type: ClassifierType,
+        max_depth: Optional[int]=None,
+        number_of_classifiers: Optional[int]=100
+):
     if clf_type == ClassifierType.DECISION_TREE:
-        clf = DecisionTreeClassifier(criterion="gini", max_depth=None, random_state=42)
+        clf = DecisionTreeClassifier(max_depth=max_depth, random_state=42)
     elif clf_type == ClassifierType.RANDOM_FOREST:
-        clf = RandomForestClassifier(n_estimators=100, max_depth=None, n_jobs=3, random_state=42)
+        clf = RandomForestClassifier(n_estimators=number_of_classifiers, max_depth=max_depth, n_jobs=3, random_state=42)
     elif clf_type == ClassifierType.RANDOM_FOREST_REGRESSOR:
-        clf = RandomForestRegressor(n_estimators=100, max_depth=None, n_jobs=3, random_state=42)
+        clf = RandomForestRegressor(n_estimators=number_of_classifiers, max_depth=max_depth, n_jobs=3, random_state=42)
     else:
         raise ValueError("Unknown classifier type specified")
 

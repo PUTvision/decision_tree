@@ -118,7 +118,19 @@ def main():
     print(f'np.shape(train_data): {np.shape(train_data)}')
     print(f'np.unique(test_target): {np.unique(test_target)}')
 
-    d.test_as_classifier(8, './../../data/vhdl/')
+    # d.test_as_classifier(8, './../../data/vhdl/')
+
+    from decision_trees import dataset_tester
+    from decision_trees.utils.constants import ClassifierType
+
+    for i in [1, 2, 3, 4, 5, 6, 7, 8, 10, 12, 16]:
+        dataset_tester.test_dataset(
+            i,
+            train_data, train_target, test_data, test_target,
+            ClassifierType.RANDOM_FOREST,
+            max_depth=None, number_of_classifiers=100,
+            path='./../../data/vhdl/', name=d.__class__.__name__
+        )
 
     # perform_gridsearch(train_data, train_target, test_data, test_target,
     #                    [16, 12, 8, 6, 4, 2, 1],
